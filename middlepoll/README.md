@@ -38,5 +38,12 @@ curl -H "Accept: application/json" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0In0.ealNyCRtZ0DDJWmexGomcWQll-57wsfMuL06J7MRVts" \
     localhost:5555/me/
+
+curl -H "Accept: application/json" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0In0.IAsdG_P_c8SRPM4pniTaFypMq6v2zwTIDjqMgmlBh3o" \
+    Infra-beecl-PWALVC2Z2YD3-913041626.us-east-1.elb.amazonaws.com/me/
 ```
+
+
 
