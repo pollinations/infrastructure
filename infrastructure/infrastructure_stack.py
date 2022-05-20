@@ -15,6 +15,7 @@ from aws_cdk import (
     aws_cloudwatch_actions as cw_actions,
     aws_ecr as ecr,
     aws_secretsmanager as sm,
+    aws_autoscaling as autoscaling,
 )
 from aws_cdk.aws_ecr_assets import DockerImageAsset
 from constructs import Construct
@@ -60,6 +61,59 @@ class InfrastructureStack(Stack):
             cpu=256,
         )
 
-        # Create Services for each model
-        
+
+        cluster = ecs.Cluster(self, "gpu-cluster",
+            vpc=vpc
+        )
+
+        auto_scaling_group = autoscaling.AutoScalingGroup(self, "models-scaling-group",
+            vpc=vpc,
+            instance_type=ec2.InstanceType("g4dn.xlarge"),
+            machine_image=ecs.EcsOptimizedImage.amazon_linux2(hardware_type=ecs.AmiHardwareType.GPU), # amzn2-ami-ecs-gpu-hvm-2.0.20220509-x86_64-ebs
+            
+            min_capacity=1,
+            max_capacity=2
+        )
+
+        capacity_provider = ecs.AsgCapacityProvider(self, "AsgCapacityProvider",
+            auto_scaling_group=auto_scaling_group
+        )
+        cluster.add_asg_capacity_provider(capacity_provider)
+
+        # task_definition = ecs.Ec2TaskDefinition(self, "TaskDef")
+
+        # task_definition.add_container("web",
+        #     image=ecs.ContainerImage.from_registry(
+        #         "r8.im/orpatashnik/styleclip@sha256:b6568e6bebca9b3f20e7efb6c710906efeb2d1ac6574a7a9d350fa51ee7daec4e"
+        #     ),
+        #     memory_reservation_mi_b=14000
+        # )
+
+
+
+        # # Create EC2 based GPU cluster for scheduled tasks
+        queue_processing_ec2_service = ecs_patterns.QueueProcessingEc2Service(self, "Service",
+            cluster=cluster,
+            image=ecs.ContainerImage.from_registry("r8.im/orpatashnik/styleclip@sha256:b6568e6bebca9b3f20e7efb6c710906efeb2d1ac6574a7a9d350fa51ee7daec4"),
+            # command=["-c", "4", "amazon.com"],
+            enable_logging=True,
+            environment={},
+            max_scaling_capacity=5,
+            container_name="styleclip-cog",
+            memory_limit_mib=14000
+            # memory_limit_mi_b=14000,
+        )
+
+        # Create cluster for models
+        # ecs_scheduled_task = ecs_patterns.ScheduledEc2Task(self, "ScheduledTask",
+        #     cluster=cluster,
+        #     scheduled_ec2_task_image_options=ecs_patterns.ScheduledEc2TaskImageOptions(
+        #         image=ecs.ContainerImage.from_registry("amazon/amazon-ecs-sample"),
+        #         memory_limit_mi_b=256,
+        #         environment={}
+        #     ),
+        #     schedule=ecs_patterns.ScheduledEc2Task(,
+        #     enabled=True,
+        #     rule_name="sample-scheduled-task-rule"
+        # )
 

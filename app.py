@@ -7,7 +7,7 @@ from infrastructure.infrastructure_stack import InfrastructureStack
 
 
 app = cdk.App()
-InfrastructureStack(app, "InfrastructureStack",
+InfrastructureStack(app, "InfrastructureStack2",
     # If you don't specify 'env', this stack will be environment-agnostic.
     # Account/Region-dependent features and context lookups will not work,
     # but a single synthesized template can be deployed anywhere.
