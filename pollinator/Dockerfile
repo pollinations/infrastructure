@@ -27,7 +27,7 @@ ENV PATH="/root/.nvm/versions/node/v${NODE_VERSION}/bin/:${PATH}"
 RUN node --version
 RUN npm --version
 
-RUN pip install --upgrade pip && pip install -r requirements.txt
+RUN pip install --upgrade pip
 
 ENV ipfs_root = "/content/ipfs"
 ENV worker_root = "/content"
@@ -39,11 +39,10 @@ RUN git clone https://github.com/pollinations/pollinations.git
 RUN cd /content/pollinations/app && npm run install_backend
 
 
-# CMD cd /content/pollinations/app && pollinate --execute "run_notebook.sh" -l $output_path/log -p $ipfs_root --ipns -n 123420 --debounce 200 > /content/cid
-
 WORKDIR /app
 COPY . /app
  
+# CMD cd /content/pollinations/app && pollinate --execute "run_notebook.sh" -l $output_path/log -p $ipfs_root --ipns -n 123420 --debounce 200 > /content/cid
 RUN pip install .
  
 CMD ["python", "pollinator/main.py"]

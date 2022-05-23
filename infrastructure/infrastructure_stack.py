@@ -5,6 +5,7 @@ from aws_cdk import (
     aws_s3 as s3,
     aws_s3_notifications as s3_notifications,
     aws_sns as sns,
+    aws_sqs as sqs,
     aws_sns_subscriptions as sns_subscriptions,
     aws_iam as iam,
     aws_ec2 as ec2,
@@ -70,7 +71,6 @@ class InfrastructureStack(Stack):
             vpc=vpc,
             instance_type=ec2.InstanceType("g4dn.xlarge"),
             machine_image=ecs.EcsOptimizedImage.amazon_linux2(hardware_type=ecs.AmiHardwareType.GPU), # amzn2-ami-ecs-gpu-hvm-2.0.20220509-x86_64-ebs
-            
             min_capacity=1,
             max_capacity=2
         )
@@ -80,41 +80,16 @@ class InfrastructureStack(Stack):
         )
         cluster.add_asg_capacity_provider(capacity_provider)
 
-        # task_definition = ecs.Ec2TaskDefinition(self, "TaskDef")
-
-        # task_definition.add_container("web",
-        #     image=ecs.ContainerImage.from_registry(
-        #         "r8.im/orpatashnik/styleclip@sha256:b6568e6bebca9b3f20e7efb6c710906efeb2d1ac6574a7a9d350fa51ee7daec4e"
-        #     ),
-        #     memory_reservation_mi_b=14000
-        # )
-
-
-
+        image = ecs.ContainerImage.from_asset(directory=os.path.join(".", "pollinator"), build_args={"platform": "linux/amd64"})
         # # Create EC2 based GPU cluster for scheduled tasks
         queue_processing_ec2_service = ecs_patterns.QueueProcessingEc2Service(self, "Service",
             cluster=cluster,
-            image=ecs.ContainerImage.from_registry("r8.im/orpatashnik/styleclip@sha256:b6568e6bebca9b3f20e7efb6c710906efeb2d1ac6574a7a9d350fa51ee7daec4"),
-            # command=["echo", "$1 $2 $3 $4 $5 $6"],
+            image=image,
+            # command=["echo"],
             enable_logging=True,
             gpu_count=1,
-            environment={},
             max_scaling_capacity=5,
-            container_name="styleclip-cog",
-            memory_limit_mib=14000
-            # memory_limit_mi_b=14000,
+            container_name="pollinator",
+            memory_limit_mib=14000,
+            # set environment variable to the queue url
         )
-
-        # Create cluster for models
-        # ecs_scheduled_task = ecs_patterns.ScheduledEc2Task(self, "ScheduledTask",
-        #     cluster=cluster,
-        #     scheduled_ec2_task_image_options=ecs_patterns.ScheduledEc2TaskImageOptions(
-        #         image=ecs.ContainerImage.from_registry("amazon/amazon-ecs-sample"),
-        #         memory_limit_mi_b=256,
-        #         environment={}
-        #     ),
-        #     schedule=ecs_patterns.ScheduledEc2Task(,
-        #     enabled=True,
-        #     rule_name="sample-scheduled-task-rule"
-        # )
-

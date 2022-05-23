@@ -34,7 +34,7 @@ def read_sqs():
     if 'Messages' in response:
         for message in response['Messages']:
             receipt_handle = message['ReceiptHandle']
-            print(f"Received message {json.dumps(message})")
+            print(f"Received message {json.dumps(message)}")
             delete_sqs_message(receipt_handle)
             return message
     else:
