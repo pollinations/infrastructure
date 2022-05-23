@@ -47,4 +47,4 @@ RUN pip install .
 
 ENV AWS_REGION="us-east-1"
  
-CMD ["python", "pollinator/main.py"]
+CMD ["python", "pollinator/sqs_consumer.py"]
