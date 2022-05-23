@@ -1,8 +1,16 @@
+from distutils.command.config import config
 import boto3
 import os
 import json
+from botocore.config import Config
 
-sqs = boto3.client('sqs')
+
+boto3_config = Config(
+    region_name = os.environ['AWS_REGION'],
+)
+
+
+sqs = boto3.client('sqs', config=boto3_config)
 
 queue_name = os.environ['QUEUE_NAME']
 

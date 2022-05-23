@@ -29,8 +29,8 @@ RUN npm --version
 
 RUN pip install --upgrade pip
 
-ENV ipfs_root = "/content/ipfs"
-ENV worker_root = "/content"
+ENV ipfs_root="/content/ipfs"
+ENV worker_root="/content"
 RUN mkdir -p $ipfs_root
 RUN mkdir -p $ipfs_root/input
 RUN mkdir -p $ipfs_root/output
@@ -44,5 +44,7 @@ COPY . /app
  
 # CMD cd /content/pollinations/app && pollinate --execute "run_notebook.sh" -l $output_path/log -p $ipfs_root --ipns -n 123420 --debounce 200 > /content/cid
 RUN pip install .
+
+ENV AWS_REGION="us-east-1"
  
 CMD ["python", "pollinator/main.py"]
