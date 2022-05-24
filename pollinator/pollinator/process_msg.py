@@ -1,4 +1,7 @@
 import os
+import subprocess
+import time
+import tempfile
 
 from pollinator.constants import images
 
@@ -13,18 +16,29 @@ def debug(f):
     return debugged
 
 
-@debug
+# @debug
 def process_message(message):
-    # start process: pollinate --send --ipns --nodeid nodeid --path /content/ipfs 
+    # start process: pollinate --send --ipns --nodeid nodeid --path /content/ipfs
 
-    # process message
-    # kill pollinate
-    print("message", type(message))
-    image = images[message['notebook']]
-    os.system(
-        f'cog predict {image}'
-        f' -i prompts="{message["prompt"]}"'
-        ' -i drawer="vqgan"'
-        f' --output=outputs/{message["pollen_id"]}'
-    )
-    return
+    # with tempfile.TemporaryDirectory() as output_path:
+    if True:
+        output_path = message['pollen_id']
+        # ipfs_pid = subprocess.Popen(
+        #     f"pollinate --send --ipns --nodeid {message['pollen_id']}"
+        #     f" --path {output_path} ",
+        #     shell=True).pid
+        # process message
+        image = images[message['notebook']]
+
+        cog_cmd = (
+            f'cog predict {image}'
+            # f' -i prompts="{message["prompt"]}"'
+            # ' -i drawer="vqgan"'
+            ' -i input="yo"'
+            f' -i output_path="{output_path}"'
+        )
+        print(cog_cmd)
+        os.system(cog_cmd)
+        # kill pollinate
+        time.sleep(5)
+        # subprocess.Popen(["kill", str(ipfs_pid)])

@@ -42,6 +42,8 @@ export QUEUE_NAME=pollens-queue
 localstack start &
 awslocal sqs create-queue --queue-name $QUEUE_NAME
 ```
+Next, build the test cpu [cog image](cog-sample/README.md).
+
 Then start the services for middleware or pollinator. It might require increasing the disk space and memory docker reserves for containers [more](https://stackoverflow.com/questions/41813774/no-space-left-on-device-when-pulling-an-image).
 
 Sen messages:
@@ -51,7 +53,7 @@ curl -H "Accept: application/json" \
     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0In0.ealNyCRtZ0DDJWmexGomcWQll-57wsfMuL06J7MRVts" \
     -X POST \
     localhost:5555/pollen/ \
-    -d '{"pollen_id": "my-pollen", "notebook": "clip+vqgan", "prompt": "A monkey enjoying a banana"}'
+    -d '{"pollen_id": "my-pollen", "notebook": "test-image", "prompt": "A monkey enjoying a banana"}'
 ```
 
 
