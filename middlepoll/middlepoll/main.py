@@ -1,6 +1,7 @@
 import os
 from typing import Union
 import json
+import time
 
 import click
 from dotenv import load_dotenv
@@ -10,6 +11,7 @@ from jose import JWTError, jwt
 from pydantic import BaseModel
 import boto3
 from botocore.config import Config
+from retry import retry
 
 load_dotenv()
 
@@ -89,21 +91,29 @@ def send_message(pollen: Pollen):
     return pollen
 
 
+@retry(tries=10, delay=1)
+def wait_for_queue_url():
+    queue_url = sqs.get_queue_url(
+            QueueName=os.environ["QUEUE_NAME"]
+        )['QueueUrl']
+    assert queue_url is not None
+    return queue_url
+
+
 @click.command()
 @click.option("--port", type=int, default=5555)
 @click.option("--host", default="0.0.0.0")
 @click.option("--aws_endpoint", type=str, default=None, help="For localstack: http://localhost:4566 | For AWS: None")
 @click.option("--aws_profile", type=str, default=None, help="For localstack: localstack | For AWS: aws_profile")
-def main(port: int, host: str, aws_endpoint=None, aws_profile=None):
+@click.option("--start_up_delay", type=int, default=0)
+def main(port: int, host: str, aws_endpoint=None, aws_profile=None, start_up_delay=0):
     """
     Run the server.
     """
     global sqs, queue_url
     sqs = boto3.client('sqs', config=boto3_config, region_name=AWS_REGION,
                          endpoint_url=aws_endpoint)
-    queue_url = sqs.get_queue_url(
-        QueueName=os.environ["QUEUE_NAME"]
-    )['QueueUrl']
+    queue_url = wait_for_queue_url()
 
     import uvicorn
 

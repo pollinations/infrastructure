@@ -9,6 +9,7 @@ services:
       - infrastructure_default
     depends_on:
       - localstack
+      - sqs_init
     environment:
       - AWS_REGION=us-east-1
       - QUEUE_NAME=pollens-queue
@@ -22,6 +23,10 @@ services:
       - middlepoll/main.py
       - --aws_endpoint
       - http://localstack:4566
+      - --start_up_delay
+      - "5"
+      - --port
+      - "5000"
   pollinator:
     build:
       context: ./pollinator
@@ -31,6 +36,7 @@ services:
       - infrastructure_default
     depends_on:
       - localstack
+      - sqs_init
     environment:
       - AWS_REGION=us-east-1
       - QUEUE_NAME=pollens-queue
@@ -55,12 +61,21 @@ services:
       - HOSTNAME_EXTERNAL=localstack
       - DOCKER_HOST=unix:///var/run/docker.sock
       - AWS_REGION=us-east-1
-
     volumes:
       # - "${TMPDIR:-/tmp}/localstack:/tmp/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
       - $HOME/.aws/:/root/.aws/
       - "${TEMPDIR:-/tmp/localstack}:/tmp/localstack"
+  sqs_init:
+    build:
+      context: .
+      dockerfile: compose_init.dockerfile
+    depends_on:
+      - localstack
+    environment:
+      - QUEUE_NAME=pollens-queue
+    volumes:
+      - $HOME/.aws/:/root/.aws/
 
 networks:
   infrastructure_default:

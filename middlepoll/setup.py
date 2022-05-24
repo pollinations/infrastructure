@@ -15,6 +15,7 @@ setup(
         "uvicorn",
         "python-jose[cryptography]",
         "python-dotenv",
+        "retry"
     ],
     extras_require={
         "test": ["pytest", "pylint!=2.5.0", "black", "mypy", "flake8", "pytest-cov"],

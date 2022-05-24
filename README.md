@@ -30,6 +30,15 @@ Install localstack
 ```
 pip install localstack awscli-local
 ```
+
+Start services all at once:
+```
+export DOCKER_DEFAULT_PLATFORM=linux/amd64  
+docker-compose build
+docker-compose up
+```
+
+Or start services individually:
 Create an SQS queue (otherwise done by cdk)
 ```
 aws configure --profile localstack
@@ -46,7 +55,8 @@ Next, build the test cpu [cog image](cog-sample/README.md).
 
 Then start the services for middleware or pollinator. It might require increasing the disk space and memory docker reserves for containers [more](https://stackoverflow.com/questions/41813774/no-space-left-on-device-when-pulling-an-image).
 
-Sen messages:
+## Requests
+Send messages:
 ```
 curl -H "Accept: application/json" \
     -H "Content-Type: application/json" \
@@ -67,5 +77,6 @@ docker run -ti \
     -v  $HOME/.aws/:/root/.aws/ \
     -e AWS_REGION=us-east-1 \
     -e QUEUE_NAME=pollens_queue \
+    --net infrastructure_default \
     infrastructure_pollinator \
     /bin/bash
