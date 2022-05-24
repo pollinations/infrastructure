@@ -38,7 +38,6 @@ RUN mkdir -p $ipfs_root/output
 RUN git clone https://github.com/pollinations/pollinations.git
 RUN cd /content/pollinations/app && npm run install_backend
 
-
 WORKDIR /app
 COPY . /app
  
