@@ -32,37 +32,6 @@ class InfrastructureStack(Stack):
                         max_azs=3,
                     )
 
-        image = ecs.ContainerImage.from_asset(directory=os.path.join(".", "middlepoll"), build_args={"platform": "linux/amd64"})
-
-        # Create ECS pattern for the ECS Cluster
-        cluster = ecs_patterns.ApplicationLoadBalancedFargateService(
-            self, "bee-cluster",
-            vpc=vpc,
-            # security_group=ec2.SecurityGroup(self, "SecurityGroup", vpc=vpc),
-            public_load_balancer=True,
-            desired_count=1,
-            task_image_options=ecs_patterns.ApplicationLoadBalancedTaskImageOptions(
-                image=image,
-                container_port=5000,
-                environment={
-                    "DEBUG": "True",
-                    "LOG_LEVEL": "DEBUG",
-                    "LOG_FORMAT": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                    # "secret_key": "not the real key"
-                },
-                secrets={
-                    "secret_key": ecs.Secret.from_secrets_manager(
-                        sm.Secret.from_secret_attributes(self, "secret_key",
-                            secret_complete_arn="arn:aws:secretsmanager:us-east-1:614871946825:secret:token-secret-key-zK8E2a",
-                        )
-                    )
-                }
-            ),
-            memory_limit_mib=1024,
-            cpu=256,
-        )
-
-
         cluster = ecs.Cluster(self, "gpu-cluster",
             vpc=vpc
         )
@@ -92,4 +61,34 @@ class InfrastructureStack(Stack):
             container_name="pollinator",
             memory_limit_mib=14000,
             # set environment variable to the queue url
+        )
+
+        image = ecs.ContainerImage.from_asset(directory=os.path.join(".", "middlepoll"), build_args={"platform": "linux/amd64"})
+
+        # Create ECS pattern for the ECS Cluster
+        cluster = ecs_patterns.ApplicationLoadBalancedFargateService(
+            self, "bee-cluster",
+            vpc=vpc,
+            # security_group=ec2.SecurityGroup(self, "SecurityGroup", vpc=vpc),
+            public_load_balancer=True,
+            desired_count=1,
+            task_image_options=ecs_patterns.ApplicationLoadBalancedTaskImageOptions(
+                image=image,
+                container_port=5000,
+                environment={
+                    "DEBUG": "True",
+                    "LOG_LEVEL": "DEBUG",
+                    "LOG_FORMAT": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                    "QUEUE_NAME": queue_processing_ec2_service.sqs_queue.queue_name,
+                },
+                secrets={
+                    "secret_key": ecs.Secret.from_secrets_manager(
+                        sm.Secret.from_secret_attributes(self, "secret_key",
+                            secret_complete_arn="arn:aws:secretsmanager:us-east-1:614871946825:secret:token-secret-key-zK8E2a",
+                        )
+                    )
+                }
+            ),
+            memory_limit_mib=1024,
+            cpu=256,
         )

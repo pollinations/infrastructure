@@ -31,23 +31,6 @@ boto3_config = Config(
 sqs = None
 queue_url = None
 
-
-def send_message(node_id, pollen):
-    while True:
-        response = sqs.receive_message(
-            QueueUrl=queue_url,
-            AttributeNames=[
-                'SentTimestamp'
-            ],
-            MaxNumberOfMessages=1,
-            MessageAttributeNames=[
-                'All'
-            ],
-            VisibilityTimeout=0,
-            WaitTimeSeconds=1000
-        )
-
-
 class Token(BaseModel):
     access_token: str
     token_type: str
