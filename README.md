@@ -3,6 +3,7 @@
 # Deploy
 ## Manual
 ```
+export DOCKER_DEFAULT_PLATFORM='linux/amd64'
 cdk synth
 cdk deploy
 ```
@@ -41,7 +42,18 @@ export QUEUE_NAME=pollens-queue
 localstack start &
 awslocal sqs create-queue --queue-name $QUEUE_NAME
 ```
-Then start the services for middleware or pollinator.
+Then start the services for middleware or pollinator. It might require increasing the disk space and memory docker reserves for containers [more](https://stackoverflow.com/questions/41813774/no-space-left-on-device-when-pulling-an-image).
+
+Sen messages:
+```
+curl -H "Accept: application/json" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0In0.ealNyCRtZ0DDJWmexGomcWQll-57wsfMuL06J7MRVts" \
+    -X POST \
+    localhost:5555/pollen/ \
+    -d '{"pollen_id": "my-pollen", "notebook": "clip+vqgan", "prompt": "A monkey enjoying a banana"}'
+```
+
 
 Send messages:
 ```

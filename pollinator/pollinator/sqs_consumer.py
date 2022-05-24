@@ -1,4 +1,5 @@
 import os
+import json
 
 import boto3
 from botocore.config import Config
@@ -45,7 +46,7 @@ def main(aws_endpoint=None, aws_profile=None):
         for message in messages:
             # Delete received message from queue
             try:
-                process_message(message['Body'])
+                process_message(json.loads(message['Body']))
             except Exception as e:
                 print(f"exception while processing message: {repr(e)}")
                 continue
