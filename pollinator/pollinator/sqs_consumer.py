@@ -1,17 +1,17 @@
 import os
 
 import boto3
+from botocore.config import Config
+import botocore
 import click
 
 from process_msg import process_message
-from botocore.config import Config
+
 
 AWS_REGION =  os.environ.get('AWS_REGION', "us-east-1")
 boto3_config = Config(
     region_name = AWS_REGION,
 )
-
-
 
 
 @click.command()
@@ -20,18 +20,40 @@ boto3_config = Config(
 def main(aws_endpoint=None, aws_profile=None):
     sqs = boto3.client('sqs', config=boto3_config, region_name=AWS_REGION,
                          endpoint_url=aws_endpoint)
-    queue = sqs.get_queue_by_name(QueueName=os.environ["QUEUE_NAME"])
+    queue_url = sqs.get_queue_url(
+        QueueName=os.environ["QUEUE_NAME"]
+    )['QueueUrl']
     while True:
-        messages = queue.receive_messages(MaxNumberOfMessages=10, WaitTimeSeconds=1,)
+        try:
+            response = sqs.receive_message(
+                QueueUrl=queue_url,
+                AttributeNames=[
+                    'SentTimestamp'
+                ],
+                MaxNumberOfMessages=1,
+                MessageAttributeNames=[
+                    'All'
+                ],
+                VisibilityTimeout=0,
+                WaitTimeSeconds=1000
+            )
+        except botocore.exceptions.ReadTimeoutError:
+            continue
+
+        messages = response['Messages']
+
         for message in messages:
+            # Delete received message from queue
             try:
-                process_message(message.body)
+                process_message(message['Body'])
             except Exception as e:
                 print(f"exception while processing message: {repr(e)}")
                 continue
 
-            message.delete()
-
+            sqs.delete_message(
+                QueueUrl=queue_url,
+                ReceiptHandle=message['ReceiptHandle']
+            )
 
 
 if __name__ == "__main__":

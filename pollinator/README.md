@@ -15,26 +15,10 @@ brew install pre-commit
 pre-commit install -t pre-commit
 ```
 
-Install localstack
-```
-pip install localstack
-```
-Create an SQS queue (otherwise done by cdk)
-```
-export QUEUE_NAME=pollens-queue
-echo 'LOCALSTACK_ENDPOINT_URL="http://localhost:4566"'
-pip install awscli-local
-localstack start &
-aws configure --profile localstack
-    AWS Access Key ID [None]: test
-    AWS Secret Access Key [None]: test
-    Default region name [None]: us-east-1
-    Default output format [None]:
-awslocal sqs create-queue --queue-name $QUEUE_NAME
-```
+Setup localstack (see [../README.md](../README.md))
 And start the worker
 ```
-python pollinator/sqs_consumer.py
+python pollinator/sqs_consumer.py --aws_endpoint http://localhost:4566 --aws_profile localstack
 ```
 Or build an run the image:
 ```
