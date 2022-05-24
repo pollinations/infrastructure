@@ -61,3 +61,11 @@ Send messages:
 ```
 awslocal sqs send-message --queue-url http://localhost:4566/000000000000/pollens-queue --message-body "{1: 1}"
 ```
+
+
+docker run -ti \
+    -v  $HOME/.aws/:/root/.aws/ \
+    -e AWS_REGION=us-east-1 \
+    -e QUEUE_NAME=pollens_queue \
+    infrastructure_pollinator \
+    /bin/bash

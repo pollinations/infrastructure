@@ -36,19 +36,22 @@ def main(aws_endpoint=None, aws_profile=None):
                     'All'
                 ],
                 VisibilityTimeout=0,
-                WaitTimeSeconds=1000
+                WaitTimeSeconds=1
             )
         except botocore.exceptions.ReadTimeoutError:
+            continue
+        if 'Messages' not in response:
+            print("no messages", response)
             continue
 
         messages = response['Messages']
 
         for message in messages:
             # Delete received message from queue
-            # try:
-            process_message(json.loads(message['Body']))
-            # except Exception as e:
-            #     print(f"exception while processing message: {repr(e)}")
+            try:
+                process_message(json.loads(message['Body']))
+            except Exception as e:
+                print(f"exception while processing message: {repr(e)}")
 
             sqs.delete_message(
                 QueueUrl=queue_url,

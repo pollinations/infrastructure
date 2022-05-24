@@ -1,0 +1,67 @@
+version: "3.9"
+services:
+  middleware:
+    build:
+      context: ./middlepoll
+      # dockerfile: ./middlepoll/Dockerfile
+    # network_mode: bridge
+    networks:
+      - infrastructure_default
+    depends_on:
+      - localstack
+    environment:
+      - AWS_REGION=us-east-1
+      - QUEUE_NAME=pollens-queue
+      - secret_key="not the real secret key"
+    volumes:
+      - $HOME/.aws/:/root/.aws/
+    ports:
+      - "5555:5000"
+    command:
+      - python
+      - middlepoll/main.py
+      - --aws_endpoint
+      - http://localstack:4566
+  pollinator:
+    build:
+      context: ./pollinator
+      # dockerfile: ./pollinator/Dockerfile
+    # network_mode: bridge
+    networks:
+      - infrastructure_default
+    depends_on:
+      - localstack
+    environment:
+      - AWS_REGION=us-east-1
+      - QUEUE_NAME=pollens-queue
+    volumes:
+      - $HOME/.aws/:/root/.aws/
+    ports:
+      - "9999:9999" # TODO: which port?
+    command:
+      - python
+      - pollinator/sqs_consumer.py
+      - --aws_endpoint
+      - http://localstack:4566
+  localstack:
+    image: localstack/localstack
+    container_name: "${LOCALSTACK_DOCKER_NAME-localstack_main}"
+    hostname: localstack
+    networks:
+      - infrastructure_default
+    environment:
+      # - HOST_TMP_FOLDER=${TMPDIR:-/tmp/}localstack
+      - SERVICES=sqs
+      - HOSTNAME_EXTERNAL=localstack
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - AWS_REGION=us-east-1
+
+    volumes:
+      # - "${TMPDIR:-/tmp}/localstack:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - $HOME/.aws/:/root/.aws/
+      - "${TEMPDIR:-/tmp/localstack}:/tmp/localstack"
+
+networks:
+  infrastructure_default:
+    external: true
