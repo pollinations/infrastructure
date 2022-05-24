@@ -34,8 +34,7 @@ def process_message(message):
             f'cog predict {image}'
             # f' -i prompts="{message["prompt"]}"'
             # ' -i drawer="vqgan"'
-            ' -i input="yo"'
-            f' -i output_path="{output_path}"'
+            ' -i prompt="yo"'
         )
         print(cog_cmd)
         os.system(cog_cmd)
