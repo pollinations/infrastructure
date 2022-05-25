@@ -22,6 +22,9 @@ from aws_cdk.aws_ecr_assets import DockerImageAsset
 from constructs import Construct
 import os
 
+
+instance_type = "CPU"
+
 class InfrastructureStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -36,13 +39,27 @@ class InfrastructureStack(Stack):
             vpc=vpc
         )
 
-        auto_scaling_group = autoscaling.AutoScalingGroup(self, "models-scaling-group",
-            vpc=vpc,
-            instance_type=ec2.InstanceType("g4dn.xlarge"),
-            machine_image=ecs.EcsOptimizedImage.amazon_linux2(hardware_type=ecs.AmiHardwareType.GPU), # amzn2-ami-ecs-gpu-hvm-2.0.20220509-x86_64-ebs
-            min_capacity=1,
-            max_capacity=2
-        )
+
+        if instance_type == "GPU":
+            auto_scaling_group = autoscaling.AutoScalingGroup(self, "models-scaling-group",
+                vpc=vpc,
+                instance_type=ec2.InstanceType("g4dn.xlarge"),
+                machine_image=ecs.EcsOptimizedImage.amazon_linux2(hardware_type=ecs.AmiHardwareType.GPU), # amzn2-ami-ecs-gpu-hvm-2.0.20220509-x86_64-ebs
+                min_capacity=1,
+                max_capacity=2
+            )
+            gpu_count = 1
+            memory_limit_mib = 14000
+        else:
+            auto_scaling_group = autoscaling.AutoScalingGroup(self, "models-scaling-group",
+                vpc=vpc,
+                instance_type=ec2.InstanceType("t2.medium"),
+                machine_image=ecs.EcsOptimizedImage.amazon_linux2(), # amzn2-ami-ecs-gpu-hvm-2.0.20220509-x86_64-ebs
+                min_capacity=1,
+                max_capacity=2
+            )
+            gpu_count = 0
+            memory_limit_mib = 1024
 
         capacity_provider = ecs.AsgCapacityProvider(self, "AsgCapacityProvider",
             auto_scaling_group=auto_scaling_group
@@ -54,16 +71,33 @@ class InfrastructureStack(Stack):
         queue_processing_ec2_service = ecs_patterns.QueueProcessingEc2Service(self, "Service",
             cluster=cluster,
             image=image,
-            # command=["echo"],
             enable_logging=True,
-            gpu_count=1,
+            gpu_count=gpu_count,
             max_scaling_capacity=5,
             container_name="pollinator",
-            memory_limit_mib=14000,
+            memory_limit_mib=memory_limit_mib,
             # set environment variable to the queue url
         )
+        # # Add a redis container to the cluster
+        # redis_container = ecs.ContainerDefinition(self, "redis-container",
+        #     image=ecs.ContainerImage.from_registry("redis:5-alpine"),
+        #     memory_limit_mib=512,
+        #     logging=ecs.LogDriver.aws_logs(stream_prefix="redis-logs"),
+        #     environment={
+        #         "REDIS_HOST": queue_processing_ec2_service.task_definition.task_definition_arn,
+        #         "REDIS_PORT": "6379",
+        #         "REDIS_PASSWORD": "",
+        #         "REDIS_DB": "0"
+        #     }
+        # )
+        # queue_processing_ec2_service.task_definition.add_container(redis_container)
+
 
         image = ecs.ContainerImage.from_asset(directory=os.path.join(".", "middlepoll"), build_args={"platform": "linux/amd64"})
+        
+        role = iam.Role(self, "FargateContainerRole", assumed_by=iam.ServicePrincipal("ecs-tasks.amazonaws.com"))
+        role.add_to_policy(iam.PolicyStatement(actions=["sqs:*"], resources=["*"]))
+
 
         # Create ECS pattern for the ECS Cluster
         cluster = ecs_patterns.ApplicationLoadBalancedFargateService(
@@ -87,7 +121,9 @@ class InfrastructureStack(Stack):
                             secret_complete_arn="arn:aws:secretsmanager:us-east-1:614871946825:secret:token-secret-key-zK8E2a",
                         )
                     )
-                }
+                },
+                # add permission to get SQS queue url and send messages to SQS queue
+                task_role=role
             ),
             memory_limit_mib=1024,
             cpu=256,
