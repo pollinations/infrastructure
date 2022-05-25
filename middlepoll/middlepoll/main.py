@@ -91,13 +91,17 @@ def send_message(pollen: Pollen):
     return pollen
 
 
-@retry(tries=10, delay=1)
-def wait_for_queue_url():
+@retry(tries=300, delay=1)
+def wait_for_queue_url(aws_endpoint):
+    print(f"Trying to get queue {os.environ['QUEUE_NAME']}")
+    global sqs, queue_url
+    sqs = boto3.client('sqs', config=boto3_config, region_name=AWS_REGION,
+                         endpoint_url=aws_endpoint)
     queue_url = sqs.get_queue_url(
             QueueName=os.environ["QUEUE_NAME"]
         )['QueueUrl']
     assert queue_url is not None
-    return queue_url
+    print(f"Got queue url: {queue_url}")
 
 
 @click.command()
@@ -110,12 +114,9 @@ def main(port: int, host: str, aws_endpoint=None, aws_profile=None, start_up_del
     """
     Run the server.
     """
-    global sqs, queue_url
-    sqs = boto3.client('sqs', config=boto3_config, region_name=AWS_REGION,
-                         endpoint_url=aws_endpoint)
-    queue_url = wait_for_queue_url()
-
     import uvicorn
+
+    wait_for_queue_url(aws_endpoint)
 
     print("sample token", get_sample_token("test"))
     uvicorn.run(app, host=host, port=port)

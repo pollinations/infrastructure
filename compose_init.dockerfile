@@ -5,4 +5,4 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2
 RUN unzip awscliv2.zip
 RUN ./aws/install
 
-CMD aws --endpoint-url=http://localstack:4566 sqs create-queue --queue-name $QUEUE_NAME
+CMD sleep 5 && aws --endpoint-url=http://localstack:4566 sqs create-queue --queue-name $QUEUE_NAME

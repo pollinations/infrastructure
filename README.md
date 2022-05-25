@@ -37,6 +37,11 @@ export DOCKER_DEFAULT_PLATFORM=linux/amd64
 docker-compose build
 docker-compose up
 ```
+Or test 
+```
+npm install -g aws-cdk-local
+SERVICES=ecs,sqs,ec2 localstack start
+```
 
 Or start services individually:
 Create an SQS queue (otherwise done by cdk)
@@ -58,11 +63,26 @@ Then start the services for middleware or pollinator. It might require increasin
 ## Requests
 Send messages:
 ```
+# to localhost
 curl -H "Accept: application/json" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0In0.ealNyCRtZ0DDJWmexGomcWQll-57wsfMuL06J7MRVts" \
     -X POST \
     localhost:5555/pollen/ \
+    -d '{"pollen_id": "my-pollen", "notebook": "test-image", "prompt": "A monkey enjoying a banana"}'
+
+# to load balancer
+curl -H "Accept: application/json" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0In0.IAsdG_P_c8SRPM4pniTaFypMq6v2zwTIDjqMgmlBh3o" \
+    Infra-beecl-1KORWJ4G4XRPG-769181447.us-east-1.elb.amazonaws.com/me/
+
+
+curl -H "Accept: application/json" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0In0.ealNyCRtZ0DDJWmexGomcWQll-57wsfMuL06J7MRVts" \
+    -X POST \
+    Infra-beecl-1KORWJ4G4XRPG-769181447.us-east-1.elb.amazonaws.com/pollen/ \
     -d '{"pollen_id": "my-pollen", "notebook": "test-image", "prompt": "A monkey enjoying a banana"}'
 ```
 
