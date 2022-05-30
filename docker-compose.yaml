@@ -47,6 +47,7 @@ services:
       - "9999:9999" # TODO: which port?
     command:
       - python
+      - -u
       - pollinator/sqs_consumer.py
       - --aws_endpoint
       - http://localstack:4566

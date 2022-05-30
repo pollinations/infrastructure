@@ -31,31 +31,32 @@ Install localstack
 pip install localstack awscli-local
 ```
 
-Start services all at once:
-```
-export DOCKER_DEFAULT_PLATFORM=linux/amd64  
-docker-compose build
-docker-compose up
-```
-Or test 
-```
-npm install -g aws-cdk-local
-SERVICES=ecs,sqs,ec2 localstack start
-```
+Do one of:
+- Start services all at once:
+    ```
+    export DOCKER_DEFAULT_PLATFORM=linux/amd64  
+    docker-compose build
+    docker-compose up
+    ```
+- test the cdk project locally
+    ```
+    npm install -g aws-cdk-local
+    SERVICES=ecs,sqs,ec2 localstack start
+    cdklocal deploy
+    ```
+- start services individually:
+    Create an SQS queue (otherwise done by cdk)
+    ```
+    aws configure --profile localstack
+        AWS Access Key ID [None]: test
+        AWS Secret Access Key [None]: test
+        Default region name [None]: us-east-1
+        Default output format [None]:
 
-Or start services individually:
-Create an SQS queue (otherwise done by cdk)
-```
-aws configure --profile localstack
-    AWS Access Key ID [None]: test
-    AWS Secret Access Key [None]: test
-    Default region name [None]: us-east-1
-    Default output format [None]:
-
-export QUEUE_NAME=pollens-queue
-localstack start &
-awslocal sqs create-queue --queue-name $QUEUE_NAME
-```
+    export QUEUE_NAME=pollens-queue
+    localstack start &
+    awslocal sqs create-queue --queue-name $QUEUE_NAME
+    ```
 Next, build the test cpu [cog image](cog-sample/README.md).
 
 Then start the services for middleware or pollinator. It might require increasing the disk space and memory docker reserves for containers [more](https://stackoverflow.com/questions/41813774/no-space-left-on-device-when-pulling-an-image).
@@ -69,20 +70,20 @@ curl -H "Accept: application/json" \
     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0In0.ealNyCRtZ0DDJWmexGomcWQll-57wsfMuL06J7MRVts" \
     -X POST \
     localhost:5555/pollen/ \
-    -d '{"pollen_id": "my-pollen", "notebook": "test-image", "prompt": "A monkey enjoying a banana"}'
+    -d '{"pollen_id": "my-pollen", "notebook": "test-image", "inputs": {"prompt": "A monkey enjoying a banana"}}'
 
 # to load balancer
 curl -H "Accept: application/json" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0In0.IAsdG_P_c8SRPM4pniTaFypMq6v2zwTIDjqMgmlBh3o" \
-    Infra-beecl-1KORWJ4G4XRPG-769181447.us-east-1.elb.amazonaws.com/me/
+    Infra-beecl-17H649Y0E2O8M-1159023412.us-east-1.elb.amazonaws.com/me/
 
 
 curl -H "Accept: application/json" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0In0.ealNyCRtZ0DDJWmexGomcWQll-57wsfMuL06J7MRVts" \
     -X POST \
-    Infra-beecl-1KORWJ4G4XRPG-769181447.us-east-1.elb.amazonaws.com/pollen/ \
+    Infra-beecl-V9JONPAHSNUT-1257727326.us-east-1.elb.amazonaws.com/pollen/ \
     -d '{"pollen_id": "my-pollen", "notebook": "test-image", "prompt": "A monkey enjoying a banana"}'
 ```
 

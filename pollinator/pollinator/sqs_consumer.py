@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 
 import boto3
 from botocore.config import Config
@@ -7,7 +8,10 @@ import botocore
 import click
 from retry import retry
 
-from process_msg import process_message
+from pollinator.process_msg import process_message
+
+
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
 
 AWS_REGION =  os.environ.get('AWS_REGION', "us-east-1")
@@ -19,7 +23,7 @@ sqs = None
 
 @retry(tries=300, delay=1)
 def wait_for_queue_url(aws_endpoint):
-    print(f"Trying to get queue {os.environ['QUEUE_NAME']}")
+    logging.info(f"Trying to get queue {os.environ['QUEUE_NAME']}")
     global sqs, queue_url
     sqs = boto3.client('sqs', config=boto3_config, region_name=AWS_REGION,
                          endpoint_url=aws_endpoint)
@@ -27,7 +31,7 @@ def wait_for_queue_url(aws_endpoint):
             QueueName=os.environ["QUEUE_NAME"]
         )['QueueUrl']
     assert queue_url is not None
-    print(f"Got queue url: {queue_url}")
+    logging.info(f"Got queue url: {queue_url}")
 
 
 @click.command()
@@ -35,6 +39,7 @@ def wait_for_queue_url(aws_endpoint):
 @click.option("--aws_profile", type=str, default=None, help="For localstack: localstack | For AWS: aws_profile")
 def main(aws_endpoint=None, aws_profile=None):
     """Poll for new messages and process them."""
+    logging.info("Starting SQS consumer...")
     wait_for_queue_url(aws_endpoint)
 
     while True:
@@ -63,7 +68,7 @@ def main(aws_endpoint=None, aws_profile=None):
             try:
                 process_message(json.loads(message['Body']))
             except Exception as e:
-                print(f"exception while processing message: {repr(e)}")
+                logging.error(f"exception while processing message: {str(e)}")
 
             sqs.delete_message(
                 QueueUrl=queue_url,
