@@ -78,20 +78,6 @@ class InfrastructureStack(Stack):
             memory_limit_mib=memory_limit_mib,
             # set environment variable to the queue url
         )
-        # # Add a redis container to the cluster
-        # redis_container = ecs.ContainerDefinition(self, "redis-container",
-        #     image=ecs.ContainerImage.from_registry("redis:5-alpine"),
-        #     memory_limit_mib=512,
-        #     logging=ecs.LogDriver.aws_logs(stream_prefix="redis-logs"),
-        #     environment={
-        #         "REDIS_HOST": queue_processing_ec2_service.task_definition.task_definition_arn,
-        #         "REDIS_PORT": "6379",
-        #         "REDIS_PASSWORD": "",
-        #         "REDIS_DB": "0"
-        #     }
-        # )
-        # queue_processing_ec2_service.task_definition.add_container(redis_container)
-
 
         image = ecs.ContainerImage.from_asset(directory=os.path.join(".", "middlepoll"), build_args={"platform": "linux/amd64"})
         

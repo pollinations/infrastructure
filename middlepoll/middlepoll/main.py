@@ -45,7 +45,7 @@ class TokenData(BaseModel):
 class Pollen(BaseModel):
     pollen_id: str
     notebook: str
-    prompt: str
+    inputs: dict
 
 
 def get_sample_token(username):

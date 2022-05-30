@@ -5,6 +5,7 @@ from locale import strcoll
 from cog import BasePredictor, Input, Path, File
 from typing import Iterator
 import os
+import time
 
 
 class Predictor(BasePredictor):
@@ -19,9 +20,10 @@ class Predictor(BasePredictor):
     ) -> Iterator[str]:
         """Run a single prediction on the model"""
         for i in range(10):
-            with open(f"/src/{i}.txt", "w") as f:
+            with open(f"/src/output/{i}.txt", "w") as f:
                 f.write(prompt)
-            yield str(i)
+            yield str(i) + prompt
+            time.sleep(3)
         # processed_input = preprocess(image)
         # output = self.model(processed_image, scale)
         # return postprocess(output)
