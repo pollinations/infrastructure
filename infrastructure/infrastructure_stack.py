@@ -1,3 +1,4 @@
+import secrets
 from aws_cdk import (
     # Duration,
     Stack,
@@ -23,11 +24,8 @@ from constructs import Construct
 import os
 
 
-# with open("./pollinator/user_data.sh") as f:
-#     user_data = f.read()
-user_data = ("docker run --gpus all --env AWS_REGION=us-east-1 --env QUEUE_NAME=pollens-queue "
-    '-v "/var/run/docker.sock:/var/run/docker.sock"'
-    "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:76d5f1c31ff2257e8613fae02553b3dd16a651ee")
+with open("./user_data.sh") as f:
+    user_data = f.read()
 class InfrastructureStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -39,10 +37,23 @@ class InfrastructureStack(Stack):
                     )
 
         # Create EC2 machines for pollinator
-        role = iam.Role(self, "InstanceSSM", assumed_by=iam.ServicePrincipal("ec2.amazonaws.com"))
-        role.add_to_policy(iam.PolicyStatement(actions=["sqs:*"], resources=["*"]))
-        # Add read access to ECR
-        role.add_to_policy(iam.PolicyStatement(actions=["ecr:*"], resources=["*"]))
+        role = iam.Role(self, "PollinatorRole",
+            assumed_by=iam.ServicePrincipal("sns.amazonaws.com")
+        )
+        role.add_to_policy(iam.PolicyStatement(
+            resources=["*"],
+            actions=["sqs:*"]
+        ))
+        role.add_to_policy(iam.PolicyStatement(
+            resources=["*"],
+            actions=["ecr:*"]
+        )) 
+
+        security_group = ec2.SecurityGroup(self, "PollinatorSecurityGroup",
+                vpc=vpc,
+                allow_all_outbound=True)
+        security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(22), "SSH")
+        security_group.add_ingress_rule(ec2.Peer.any_ipv6(), ec2.Port.tcp(22), "SSH")
         
         pollinator_ec2 = ec2.Instance(self, "PollinatorEC2",
             instance_type=ec2.InstanceType("g4dn.xlarge"),
@@ -50,7 +61,27 @@ class InfrastructureStack(Stack):
             key_name="pollinations-aws-key",
             role=role,
             vpc=vpc,
-            user_data=ec2.UserData.custom(user_data))
+            user_data=ec2.UserData.custom(user_data),
+            # add public IP
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
+            # add security group
+            security_group=security_group,
+        )
+        # Add log group to cloudwatch
+        log_group = logs.LogGroup(self, "PollinatorLogGroup",
+            retention=logs.RetentionDays.ONE_WEEK,
+        )
+        log_group.grant_write(iam.ServicePrincipal("ec2.amazonaws.com"))
+
+        pollinator_ec2.instance.add_property_override("BlockDeviceMappings", [{
+            "DeviceName": "/dev/xvda",
+            "Ebs": {
+                "VolumeSize": "150",
+                "VolumeType": "gp3",
+                "Iops": "3000",
+                "DeleteOnTermination": "true"
+            }
+        }])
 
         # Create SQS queue
         queue_name = "pollens-queue"
