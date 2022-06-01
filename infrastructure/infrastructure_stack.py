@@ -46,7 +46,8 @@ class InfrastructureStack(Stack):
                 instance_type=ec2.InstanceType("g4dn.xlarge"),
                 machine_image=ecs.EcsOptimizedImage.amazon_linux2(hardware_type=ecs.AmiHardwareType.GPU), # amzn2-ami-ecs-gpu-hvm-2.0.20220509-x86_64-ebs
                 min_capacity=1,
-                max_capacity=2
+                max_capacity=2,
+                key_name="pollinations-aws-key",
             )
             gpu_count = 1
             memory_limit_mib = 14000

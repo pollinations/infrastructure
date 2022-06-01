@@ -85,6 +85,13 @@ curl -H "Accept: application/json" \
     -X POST \
     Infra-beecl-V9JONPAHSNUT-1257727326.us-east-1.elb.amazonaws.com/pollen/ \
     -d '{"pollen_id": "my-pollen", "notebook": "test-image", "prompt": "A monkey enjoying a banana"}'
+
+curl -H "Accept: application/json" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0In0.ealNyCRtZ0DDJWmexGomcWQll-57wsfMuL06J7MRVts" \
+    -X POST \
+    Backe-beecl-M843IRJ6T290-1562335207.us-east-1.elb.amazonaws.com/pollen/ \
+    -d '{"pollen_id": "my-pollen", "notebook": "clip+vqgan", "inputs": {"drawer": "vqgan", "prompts": "yo"}}'
 ```
 
 
