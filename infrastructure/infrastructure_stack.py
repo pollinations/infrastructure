@@ -23,7 +23,7 @@ from constructs import Construct
 import os
 
 
-instance_type = "CPU"
+instance_type = "GPU"
 
 class InfrastructureStack(Stack):
 

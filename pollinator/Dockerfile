@@ -11,6 +11,12 @@ RUN chmod ugoa+rwx -R /usr/local/bin/
 
 # # Install docker to run cog
 RUN curl -fsSL https://get.docker.com | sh
+# Install the magic wrapper.
+ADD ./wrapdocker /usr/local/bin/wrapdocker
+RUN chmod +x /usr/local/bin/wrapdocker
+# Define additional metadata for our image.
+VOLUME /var/lib/docker
+
 # Install cog
 RUN curl -o /usr/local/bin/cog -L https://github.com/replicate/cog/releases/latest/download/cog_`uname -s`_`uname -m`
 RUN chmod +x /usr/local/bin/cog
