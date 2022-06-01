@@ -23,8 +23,11 @@ from constructs import Construct
 import os
 
 
-instance_type = "GPU"
-
+# with open("./pollinator/user_data.sh") as f:
+#     user_data = f.read()
+user_data = ("docker run --gpus all --env AWS_REGION=us-east-1 --env QUEUE_NAME=pollens-queue "
+    '-v "/var/run/docker.sock:/var/run/docker.sock"'
+    "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:76d5f1c31ff2257e8613fae02553b3dd16a651ee")
 class InfrastructureStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -35,56 +38,29 @@ class InfrastructureStack(Stack):
                         max_azs=3,
                     )
 
-        cluster = ecs.Cluster(self, "gpu-cluster",
-            vpc=vpc
-        )
+        # Create EC2 machines for pollinator
+        role = iam.Role(self, "InstanceSSM", assumed_by=iam.ServicePrincipal("ec2.amazonaws.com"))
+        role.add_to_policy(iam.PolicyStatement(actions=["sqs:*"], resources=["*"]))
+        # Add read access to ECR
+        role.add_to_policy(iam.PolicyStatement(actions=["ecr:*"], resources=["*"]))
+        
+        pollinator_ec2 = ec2.Instance(self, "PollinatorEC2",
+            instance_type=ec2.InstanceType("g4dn.xlarge"),
+            machine_image=ecs.EcsOptimizedImage.amazon_linux2(hardware_type=ecs.AmiHardwareType.GPU), 
+            key_name="pollinations-aws-key",
+            role=role,
+            vpc=vpc,
+            user_data=ec2.UserData.custom(user_data))
 
+        # Create SQS queue
+        queue_name = "pollens-queue"
+        sqs_queue = sqs.Queue(self, "SQSQueue", queue_name=queue_name)
 
-        if instance_type == "GPU":
-            auto_scaling_group = autoscaling.AutoScalingGroup(self, "models-scaling-group",
-                vpc=vpc,
-                instance_type=ec2.InstanceType("g4dn.xlarge"),
-                machine_image=ecs.EcsOptimizedImage.amazon_linux2(hardware_type=ecs.AmiHardwareType.GPU), # amzn2-ami-ecs-gpu-hvm-2.0.20220509-x86_64-ebs
-                min_capacity=1,
-                max_capacity=2,
-                key_name="pollinations-aws-key",
-            )
-            gpu_count = 1
-            memory_limit_mib = 14000
-        else:
-            auto_scaling_group = autoscaling.AutoScalingGroup(self, "models-scaling-group",
-                vpc=vpc,
-                instance_type=ec2.InstanceType("t2.medium"),
-                machine_image=ecs.EcsOptimizedImage.amazon_linux2(), # amzn2-ami-ecs-gpu-hvm-2.0.20220509-x86_64-ebs
-                min_capacity=1,
-                max_capacity=2
-            )
-            gpu_count = 0
-            memory_limit_mib = 1024
-
-        capacity_provider = ecs.AsgCapacityProvider(self, "AsgCapacityProvider",
-            auto_scaling_group=auto_scaling_group
-        )
-        cluster.add_asg_capacity_provider(capacity_provider)
-
-        image = ecs.ContainerImage.from_asset(directory=os.path.join(".", "pollinator"), build_args={"platform": "linux/amd64"})
-        # # Create EC2 based GPU cluster for scheduled tasks
-        queue_processing_ec2_service = ecs_patterns.QueueProcessingEc2Service(self, "Service",
-            cluster=cluster,
-            image=image,
-            enable_logging=True,
-            gpu_count=gpu_count,
-            max_scaling_capacity=5,
-            container_name="pollinator",
-            memory_limit_mib=memory_limit_mib,
-            # set environment variable to the queue url
-        )
-
+        # Create middleware ecs cluster
         image = ecs.ContainerImage.from_asset(directory=os.path.join(".", "middlepoll"), build_args={"platform": "linux/amd64"})
         
         role = iam.Role(self, "FargateContainerRole", assumed_by=iam.ServicePrincipal("ecs-tasks.amazonaws.com"))
         role.add_to_policy(iam.PolicyStatement(actions=["sqs:*"], resources=["*"]))
-
 
         # Create ECS pattern for the ECS Cluster
         cluster = ecs_patterns.ApplicationLoadBalancedFargateService(
@@ -100,7 +76,7 @@ class InfrastructureStack(Stack):
                     "DEBUG": "True",
                     "LOG_LEVEL": "DEBUG",
                     "LOG_FORMAT": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                    "QUEUE_NAME": queue_processing_ec2_service.sqs_queue.queue_name,
+                    "QUEUE_NAME": queue_name,
                 },
                 secrets={
                     "secret_key": ecs.Secret.from_secrets_manager(

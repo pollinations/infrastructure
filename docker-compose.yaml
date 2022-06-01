@@ -28,9 +28,7 @@ services:
       - --port
       - "5555"
   pollinator:
-    build:
-      context: ./pollinator
-      # dockerfile: ./pollinator/Dockerfile
+    image: pollinator
     # network_mode: bridge
     # networks:
     #   - infrastructure_default
