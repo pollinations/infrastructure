@@ -16,10 +16,12 @@ aws ecr get-login-password \
     --password-stdin 614871946825.dkr.ecr.us-east-1.amazonaws.com >> /tmp/setup.log
 
 mkdir /tmp/outputs
+docker pull 614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:latest
 docker run --gpus all -d --rm \
+    --network host \
     --env AWS_REGION=us-east-1 \
     --env QUEUE_NAME=pollens-queue  \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "$HOME/.aws/:/root/.aws/" \
     --mount type=bind,source=/tmp/outputs,target=/tmp/outputs \
-    614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:76d5f1c31ff2257e8613fae02553b3dd16a651ee
+    614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:latest
