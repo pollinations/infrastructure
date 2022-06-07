@@ -1,0 +1,83 @@
+version: "3.9"
+services:
+  middleware:
+    build:
+      context: ./middlepoll
+      # dockerfile: ./middlepoll/Dockerfile
+    # network_mode: bridge
+    # networks:
+    #   - infrastructure_default
+    depends_on:
+      - localstack
+      - sqs_init
+    environment:
+      - AWS_REGION=us-east-1
+      - QUEUE_NAME=pollens-queue
+      - secret_key="not the real secret key"
+    volumes:
+      - $HOME/.aws/:/root/.aws/
+    ports:
+      - "5555:5555"
+    command:
+      - python
+      - middlepoll/main.py
+      - --aws_endpoint
+      - http://localstack:4566
+      - --start_up_delay
+      - "5"
+      - --port
+      - "5555"
+  pollinator:
+    image: pollinator
+    # network_mode: bridge
+    # networks:
+    #   - infrastructure_default
+    depends_on:
+      - localstack
+      - sqs_init
+    environment:
+      - AWS_REGION=us-east-1
+      - QUEUE_NAME=pollens-queue
+    volumes:
+      - $HOME/.aws/:/root/.aws/
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    # ports:
+    #   - "9999:9999" # TODO: which port?
+    command:
+      - python
+      - -u
+      - pollinator/sqs_consumer.py
+      - --aws_endpoint
+      - http://localstack:4566
+  localstack:
+    image: localstack/localstack
+    container_name: "${LOCALSTACK_DOCKER_NAME-localstack_main}"
+    hostname: localstack
+    # network_mode: bridge
+    # networks:
+    #   - infrastructure_default
+    environment:
+      # - HOST_TMP_FOLDER=${TMPDIR:-/tmp/}localstack
+      - SERVICES=sqs
+      - HOSTNAME_EXTERNAL=localstack
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - AWS_REGION=us-east-1
+    volumes:
+      # - "${TMPDIR:-/tmp}/localstack:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - $HOME/.aws/:/root/.aws/
+      - "${TEMPDIR:-/tmp/localstack}:/tmp/localstack"
+  sqs_init:
+    build:
+      context: .
+      dockerfile: compose_init.dockerfile
+    depends_on:
+      - localstack
+    environment:
+      - QUEUE_NAME=pollens-queue
+    volumes:
+      - $HOME/.aws/:/root/.aws/
+
+# networks:
+#   infrastructure_default:
+#     external: true

@@ -25,7 +25,7 @@ pre-commit install -t pre-commit
 ```
 and run the server:
 ```
-python middlepoll/main.py
+python middlepoll/main.py --aws_endpoint http://localhost:4566 --aws_profile localstack 
 ```
 Or build an run the image:
 ```
