@@ -1,3 +1,4 @@
+#!/bin/bash
 echo "Start setup" >> /tmp/setup.log
 sudo yum update -y >> /tmp/setup.log
 sudo yum install -y awslogs >> /tmp/setup.log
@@ -5,9 +6,9 @@ sudo systemctl start awslogsd >> /tmp/setup.log
 sudo systemctl enable awslogsd.service >> /tmp/setup.log
 echo "Installed aws logs" >> /tmp/setup.log
 
-echo "[default]" >> ~/.aws/credentials
-echo "aws_access_key_id = $AWS_ACCESS_KEY_ID" >> ~/.aws/credentials
-echo "aws_secret_access_key = $AWS_SECRET_ACCESS_KEY" >> ~/.aws/credentials
+# echo "[default]" >> ~/.aws/credentials
+# echo "aws_access_key_id = $AWS_ACCESS_KEY_ID" >> ~/.aws/credentials
+# echo "aws_secret_access_key = $AWS_SECRET_ACCESS_KEY" >> ~/.aws/credentials
 
 aws ecr get-login-password \
     --region us-east-1 \
