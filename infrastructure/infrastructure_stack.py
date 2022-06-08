@@ -51,6 +51,15 @@ class InfrastructureStack(Stack):
             resources=["*"],
             actions=["ecr:*"]
         )) 
+        role.add_to_policy(iam.PolicyStatement(
+            resources=["*"],
+            actions=[
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "logs:DescribeLogStreams"
+            ]
+        ))
 
         security_group = ec2.SecurityGroup(self, "PollinatorSecurityGroup",
                 vpc=vpc,
@@ -113,21 +122,10 @@ class InfrastructureStack(Stack):
         log_group = logs.LogGroup(self, "PollinatorLogGroup",
             retention=logs.RetentionDays.ONE_WEEK,
         )
-        log_group.grant_write(iam.ServicePrincipal("ec2.amazonaws.com"))
-
-        # pollinator_ec2.instance.add_property_override("BlockDeviceMappings", [{
-        #     "DeviceName": "/dev/xvda",
-        #     "Ebs": {
-        #         "VolumeSize": "150",
-        #         "VolumeType": "gp3",
-        #         "Iops": "3000",
-        #         "DeleteOnTermination": "true"
-        #     }
-        # }])
 
         # Create SQS queue
         queue_name = "pollens-queue"
-        # sqs_queue = sqs.Queue(self, "SQSQueue", queue_name=queue_name)
+        sqs_queue = sqs.Queue(self, "SQSQueue", queue_name=queue_name)
 
         # Create middleware ecs cluster
         image = ecs.ContainerImage.from_asset(directory=os.path.join(".", "middlepoll"), build_args={"platform": "linux/amd64"})

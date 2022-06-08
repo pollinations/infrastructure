@@ -6,23 +6,49 @@ sudo systemctl start awslogsd >> /tmp/setup.log
 sudo systemctl enable awslogsd.service >> /tmp/setup.log
 echo "Installed aws logs" >> /tmp/setup.log
 
-# echo "[default]" >> ~/.aws/credentials
-# echo "aws_access_key_id = $AWS_ACCESS_KEY_ID" >> ~/.aws/credentials
-# echo "aws_secret_access_key = $AWS_SECRET_ACCESS_KEY" >> ~/.aws/credentials
+
+mkdir /tmp/outputs
+
+echo '
+#!/bin/bash
+aws ecr get-login-password \
+    --region us-east-1 \
+| docker login \
+    --username AWS \
+    --password-stdin 614871946825.dkr.ecr.us-east-1.amazonaws.com
+docker pull 614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:latest \
+    | grep "Status: Downloaded newer image" \
+    && (docker kill pollinator | echo Pollinator not running...) \
+    && docker run --gpus all -d --rm \
+        --network host \
+        --name pollinator \
+        --env AWS_REGION=us-east-1 \
+        --env QUEUE_NAME=pollens-queue  \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        -v "$HOME/.aws/:/root/.aws/" \
+        --mount type=bind,source=/tmp/outputs,target=/tmp/outputs \
+        614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:latest
+' > ~/pull_updates_and_restart.sh
+
+# Pull for updates every full hour
+crontab -l > restart_cron
+echo "00 * * * * sh ~/pull_updates_and_restart.sh &>> /tmp/pollinator.log" >> restart_cron
+crontab restart_cron
+rm restart_cron
 
 aws ecr get-login-password \
     --region us-east-1 \
 | docker login \
     --username AWS \
-    --password-stdin 614871946825.dkr.ecr.us-east-1.amazonaws.com >> /tmp/setup.log
-
-mkdir /tmp/outputs
+    --password-stdin 614871946825.dkr.ecr.us-east-1.amazonaws.com
 docker pull 614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:latest
+
 docker run --gpus all -d --rm \
-    --network host \
-    --env AWS_REGION=us-east-1 \
-    --env QUEUE_NAME=pollens-queue  \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v "$HOME/.aws/:/root/.aws/" \
-    --mount type=bind,source=/tmp/outputs,target=/tmp/outputs \
-    614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:latest
+        --network host \
+        --name pollinator \
+        --env AWS_REGION=us-east-1 \
+        --env QUEUE_NAME=pollens-queue  \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        -v "$HOME/.aws/:/root/.aws/" \
+        --mount type=bind,source=/tmp/outputs,target=/tmp/outputs \
+        614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:latest &>> /tmp/pollinator.log

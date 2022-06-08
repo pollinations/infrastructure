@@ -61,6 +61,11 @@ Next, build the test cpu [cog image](cog-sample/README.md).
 
 Then start the services for middleware or pollinator. It might require increasing the disk space and memory docker reserves for containers [more](https://stackoverflow.com/questions/41813774/no-space-left-on-device-when-pulling-an-image).
 
+
+Send messages:
+```
+awslocal sqs send-message --queue-url http://localhost:4566/000000000000/pollens-queue --message-body "{1: 1}"
+```
 ## Requests
 Send messages:
 ```
@@ -90,21 +95,9 @@ curl -H "Accept: application/json" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0In0.ealNyCRtZ0DDJWmexGomcWQll-57wsfMuL06J7MRVts" \
     -X POST \
-    Backe-beecl-M843IRJ6T290-1562335207.us-east-1.elb.amazonaws.com/pollen/ \
-    -d '{"pollen_id": "my-pollen", "notebook": "clip+vqgan", "inputs": {"drawer": "vqgan", "prompts": "yo"}}'
+     Eleph-beecl-1GZBCCHOAXAZ9-412901418.us-east-1.elb.amazonaws.com/pollen/ \
+    -d '{"pollen_id": "my-pollen", "notebook": "test-image", "inputs": {"Prompt": "A very very very cool new pollinator"}}'
 ```
 
 
-Send messages:
-```
-awslocal sqs send-message --queue-url http://localhost:4566/000000000000/pollens-queue --message-body "{1: 1}"
-```
 
-
-docker run -ti \
-    -v  $HOME/.aws/:/root/.aws/ \
-    -e AWS_REGION=us-east-1 \
-    -e QUEUE_NAME=pollens_queue \
-    --net infrastructure_default \
-    infrastructure_pollinator \
-    /bin/bash
