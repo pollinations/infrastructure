@@ -18,7 +18,7 @@ aws ecr get-login-password \
     --password-stdin 614871946825.dkr.ecr.us-east-1.amazonaws.com
 docker pull 614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:latest \
     | grep "Status: Downloaded newer image" \
-    && (docker kill pollinator | echo Pollinator not running...) \
+    && (docker kill pollinator || echo Pollinator not running...) \
     && docker run --gpus all -d --rm \
         --network host \
         --name pollinator \
