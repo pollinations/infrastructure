@@ -66,7 +66,46 @@ Send messages:
 ```
 awslocal sqs send-message --queue-url http://localhost:4566/000000000000/pollens-queue --message-body "{1: 1}"
 ```
-## Requests
+# Request to the REST API:
+
+## Example:
+```
+curl -H "Accept: application/json" \
+    -H "Content-Type: application/json"
+    -X POST \
+     Eleph-beecl-1GZBCCHOAXAZ9-412901418.us-east-1.elb.amazonaws.com/pollen/ \
+    -d '{"notebook": "test-image", "ipfs": "https://ipfs.pollinations.ai/ipfs/QmYdTVSzh6MNDBKMG9Z1vqfzomTYWczV3iP15YBupKSsM1"}'
+```
+
+## Structure:
+```
+curl -H "Accept: application/json" \
+    -H "Content-Type: application/json" \
+    -X POST \
+     api.pollinations.ai/pollen/ \
+    -d '{"notebook": "test-image", "ipfs": "<url to ipfs>"}'
+```
+
+Where the file structure in ipfs is:
+```
+/cid/
+|--- inputs/
+|            | ---Prompt: "avocado chair"
+|            | ---init_image: "init.png"
+|            | ---init.png
+|            | ---...
+|--- outputs/
+```
+
+This will be translated into the inputs for the cog model to
+```
+{
+    "Prompt": "avocado chair",
+    "init_image": "<ipfs-url>/inputs/init.png"
+}
+```
+
+
 Send messages:
 ```
 # to localhost

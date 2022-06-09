@@ -1,11 +1,12 @@
 # Prediction interface for Cog ⚙️
 # https://github.com/replicate/cog/blob/main/docs/python.md
 
-from locale import strcoll
-from cog import BasePredictor, Input, Path, File
-from typing import Iterator
 import os
 import time
+from locale import strcoll
+from typing import Iterator
+
+from cog import BasePredictor, File, Input, Path
 
 
 class Predictor(BasePredictor):
@@ -14,10 +15,7 @@ class Predictor(BasePredictor):
         # self.model = torch.load("./weights.pth")
         pass
 
-    def predict(
-        self,
-        prompt: str = Input("prompt")
-    ) -> Iterator[str]:
+    def predict(self, prompt: str = Input("prompt")) -> Iterator[str]:
         """Run a single prediction on the model"""
         for i in range(10):
             with open(f"/src/output/{i}.txt", "w") as f:
