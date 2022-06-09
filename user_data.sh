@@ -32,7 +32,7 @@ docker pull 614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator
 
 # Pull for updates every full hour
 crontab -l > restart_cron
-echo "00 * * * * sh ~/pull_updates_and_restart.sh &>> /tmp/pollinator.log" >> restart_cron
+echo "*/5 * * * * sh ~/pull_updates_and_restart.sh &>> /tmp/pollinator.log" >> restart_cron
 crontab restart_cron
 rm restart_cron
 
