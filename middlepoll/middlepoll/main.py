@@ -47,13 +47,13 @@ class TokenData(BaseModel):
 
 class PollenRequest(BaseModel):
     notebook: str
-    ipfs: dict
+    ipfs: str
 
 
 class PollenResponse(BaseModel):
     pollen_id: str
     notebook: str
-    ipfs: dict
+    ipfs: str
 
 
 def get_sample_token(username):
@@ -92,8 +92,8 @@ async def read_users_me(current_user: TokenData = Depends(get_current_user)):
 @app.post("/pollen/", response_model=PollenResponse)
 def send_message(pollen: PollenRequest):
     print(f"received message: {pollen}")
-    pollen = PollenResponse(uuid4().hex, pollen.notebook, pollen.ipfs)
-    sqs.send_message(QueueUrl=queue_url, MessageBody=json.dumps(pollen.dict()))
+    pollen = PollenResponse(pollen_id=uuid4().hex, notebook=pollen.notebook, ipfs=pollen.ipfs)
+    # sqs.send_message(QueueUrl=queue_url, MessageBody=json.dumps(pollen.dict())) TODO
     return pollen
 
 
@@ -129,7 +129,7 @@ def main(port: int, host: str, aws_endpoint=None, aws_profile=None, start_up_del
     """
     Run the server.
     """
-    wait_for_queue_url(aws_endpoint)
+    # wait_for_queue_url(aws_endpoint) TODO
 
     print("sample token", get_sample_token("test"))
     uvicorn.run(app, host=host, port=port)

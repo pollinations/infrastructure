@@ -71,19 +71,10 @@ awslocal sqs send-message --queue-url http://localhost:4566/000000000000/pollens
 ## Example:
 ```
 curl -H "Accept: application/json" \
-    -H "Content-Type: application/json"
-    -X POST \
-     Eleph-beecl-1GZBCCHOAXAZ9-412901418.us-east-1.elb.amazonaws.com/pollen/ \
-    -d '{"notebook": "test-image", "ipfs": "QmYdTVSzh6MNDBKMG9Z1vqfzomTYWczV3iP15YBupKSsM1"}'
-```
-
-## Structure:
-```
-curl -H "Accept: application/json" \
     -H "Content-Type: application/json" \
     -X POST \
-     api.pollinations.ai/pollen/ \
-    -d '{"notebook": "latent-diffusion", "ipfs": "<url to ipfs>"}'
+    http://Eleph-beecl-1GZBCCHOAXAZ9-412901418.us-east-1.elb.amazonaws.com/pollen/ \
+    -d '{"notebook": "latent-diffusion", "ipfs": "QmRra7zGLpXYcnaPrgMtpqqpjtyXWQB63qxzjDXjU2fHr"}'
 ```
 
 Where the file structure in ipfs is:
@@ -103,39 +94,6 @@ This will be translated into the inputs for the cog model to
     "Prompt": "avocado chair",
     "init_image": "<ipfs-url>/inputs/init.png"
 }
-```
-
-
-Send messages:
-```
-# to localhost
-curl -H "Accept: application/json" \
-    -H "Content-Type: application/json" \
-    -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0In0.ealNyCRtZ0DDJWmexGomcWQll-57wsfMuL06J7MRVts" \
-    -X POST \
-    localhost:5555/pollen/ \
-    -d '{"pollen_id": "my-pollen", "notebook": "test-image", "inputs": {"prompt": "A monkey enjoying a banana"}}'
-
-# to load balancer
-curl -H "Accept: application/json" \
-    -H "Content-Type: application/json" \
-    -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0In0.IAsdG_P_c8SRPM4pniTaFypMq6v2zwTIDjqMgmlBh3o" \
-    Infra-beecl-17H649Y0E2O8M-1159023412.us-east-1.elb.amazonaws.com/me/
-
-
-curl -H "Accept: application/json" \
-    -H "Content-Type: application/json" \
-    -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0In0.ealNyCRtZ0DDJWmexGomcWQll-57wsfMuL06J7MRVts" \
-    -X POST \
-    Infra-beecl-V9JONPAHSNUT-1257727326.us-east-1.elb.amazonaws.com/pollen/ \
-    -d '{"pollen_id": "my-pollen", "notebook": "test-image", "prompt": "A monkey enjoying a banana"}'
-
-curl -H "Accept: application/json" \
-    -H "Content-Type: application/json" \
-    -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0In0.ealNyCRtZ0DDJWmexGomcWQll-57wsfMuL06J7MRVts" \
-    -X POST \
-     Eleph-beecl-1GZBCCHOAXAZ9-412901418.us-east-1.elb.amazonaws.com/pollen/ \
-    -d '{"pollen_id": "my-pollen", "notebook": "test-image", "inputs": {"Prompt": "A very very very cool new pollinator"}}'
 ```
 
 
