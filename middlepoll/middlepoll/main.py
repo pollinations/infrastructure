@@ -93,7 +93,7 @@ async def read_users_me(current_user: TokenData = Depends(get_current_user)):
 def send_message(pollen: PollenRequest):
     print(f"received message: {pollen}")
     pollen = PollenResponse(pollen_id=uuid4().hex, notebook=pollen.notebook, ipfs=pollen.ipfs)
-    # sqs.send_message(QueueUrl=queue_url, MessageBody=json.dumps(pollen.dict())) TODO
+    sqs.send_message(QueueUrl=queue_url, MessageBody=json.dumps(pollen.dict()))
     return pollen
 
 
@@ -129,7 +129,7 @@ def main(port: int, host: str, aws_endpoint=None, aws_profile=None, start_up_del
     """
     Run the server.
     """
-    # wait_for_queue_url(aws_endpoint) TODO
+    wait_for_queue_url(aws_endpoint)
 
     print("sample token", get_sample_token("test"))
     uvicorn.run(app, host=host, port=port)
