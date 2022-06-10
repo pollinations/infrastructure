@@ -7,7 +7,7 @@ sudo systemctl enable awslogsd.service >> /tmp/setup.log
 echo "Installed aws logs" >> /tmp/setup.log
 
 
-mkdir /tmp/outputs
+mkdir /tmp/ipfs
 
 echo '
 #!/bin/bash
@@ -26,7 +26,7 @@ docker pull 614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator
         --env QUEUE_NAME=pollens-queue  \
         -v /var/run/docker.sock:/var/run/docker.sock \
         -v "$HOME/.aws/:/root/.aws/" \
-        --mount type=bind,source=/tmp/outputs,target=/tmp/outputs \
+        --mount type=bind,source=/tmp/ipfs,target=/tmp/ipfs \
         614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:latest
 ' > ~/pull_updates_and_restart.sh
 
@@ -50,5 +50,5 @@ docker run --gpus all -d --rm \
         --env QUEUE_NAME=pollens-queue  \
         -v /var/run/docker.sock:/var/run/docker.sock \
         -v "$HOME/.aws/:/root/.aws/" \
-        --mount type=bind,source=/tmp/outputs,target=/tmp/outputs \
+        --mount type=bind,source=/tmp/ipfs,target=/tmp/ipfs \
         614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:latest &>> /tmp/pollinator.log
