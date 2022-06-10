@@ -8,24 +8,37 @@ cdk synth
 cdk deploy
 ```
 
-## CI
-comming soon
+# Request to the REST API:
 
-# Repo summary
-Infrastructure: see bees.drawio
+## Example:
+```
+curl -H "Accept: application/json" \
+    -H "Content-Type: application/json" \
+    -X POST \
+    Eleph-beecl-1OHF1H6OP0ANU-1012574990.us-east-1.elb.amazonaws.com/pollen/ \
+    -d '{"notebook": "latent-diffusion", "ipfs": "QmRra7zGLpXYcnaPrgMtpqqpjtyXWQB63qxzjDXjU2fHrq"}'
+```
 
-Repo structure:
-- middlepoll: middleware, deployed on ECS+Fargate, consumes from load balancer
-    - authentication via jwt, validates with secret from secrets manager
-    - accepts http requests via load balancer for pollens
-    - puts pollens into an SQS queue
-- pollinator: Worker, eployed on EC2+EC2 with GPU
-    - reads from SQS queue
-    - runs cog to generate outputs
-    - runs ipfs syncing
-- infrastructure: creates clusters, load balancer
+Where the file structure in ipfs is:
+```
+/cid/
+|--- inputs/
+|            | ---Prompt: "avocado chair"
+|            | ---init_image: "init.png"
+|            | ---init.png
+|            | ---...
+|--- outputs/
+```
 
-# Development
+This will be translated into the inputs for the cog model to
+```
+{
+    "Prompt": "avocado chair",
+    "init_image": "<ipfs-url>/inputs/init.png"
+}
+```
+
+# Development with localstack (WIP)
 Install localstack
 ```
 pip install localstack awscli-local
@@ -66,35 +79,5 @@ Send messages:
 ```
 awslocal sqs send-message --queue-url http://localhost:4566/000000000000/pollens-queue --message-body "{1: 1}"
 ```
-# Request to the REST API:
-
-## Example:
-```
-curl -H "Accept: application/json" \
-    -H "Content-Type: application/json" \
-    -X POST \
-    http://Eleph-beecl-1GZBCCHOAXAZ9-412901418.us-east-1.elb.amazonaws.com/pollen/ \
-    -d '{"notebook": "latent-diffusion", "ipfs": "QmRra7zGLpXYcnaPrgMtpqqpjtyXWQB63qxzjDXjU2fHr"}'
-```
-
-Where the file structure in ipfs is:
-```
-/cid/
-|--- inputs/
-|            | ---Prompt: "avocado chair"
-|            | ---init_image: "init.png"
-|            | ---init.png
-|            | ---...
-|--- outputs/
-```
-
-This will be translated into the inputs for the cog model to
-```
-{
-    "Prompt": "avocado chair",
-    "init_image": "<ipfs-url>/inputs/init.png"
-}
-```
-
 
 
