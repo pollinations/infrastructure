@@ -28,13 +28,27 @@ docker pull 614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator
         -v "$HOME/.aws/:/root/.aws/" \
         --mount type=bind,source=/tmp/ipfs,target=/tmp/ipfs \
         614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:latest
-' > ~/pull_updates_and_restart.sh
+' > /home/ec2-user/pull_updates_and_restart.sh
 
-# Pull for updates every full hour
-crontab -l > restart_cron
-echo "*/5 * * * * sh ~/pull_updates_and_restart.sh &>> /tmp/pollinator.log" >> restart_cron
-crontab restart_cron
-rm restart_cron
+
+echo '
+#!/bin/bash
+aws ecr get-login-password \
+    --region us-east-1 \
+| docker login \
+    --username AWS \
+    --password-stdin 614871946825.dkr.ecr.us-east-1.amazonaws.com
+curl -o constants.py https://raw.githubusercontent.com/pollinations/pollinator/main/pollinator/constants.py
+curl -o fetch_images.py https://raw.githubusercontent.com/pollinations/pollinator/main/ec2_fetch_images.py
+python3 fetch_images.py | sh
+' > /home/ec2-user/fetch_models.sh
+
+crontab -l > fetch_updates
+echo "*/5 * * * * sh /home/ec2-user/pull_updates_and_restart.sh &>> /tmp/pollinator.log" >> fetch_updates
+echo "*/5 * * * * sh /home/ec2-user/fetch_models.sh &>> /tmp/pollinator.log" >> fetch_updates
+crontab fetch_updates
+rm fetch_updates
+
 
 aws ecr get-login-password \
     --region us-east-1 \

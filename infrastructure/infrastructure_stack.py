@@ -37,6 +37,11 @@ class InfrastructureStack(Stack):
             max_azs=3,
         )
 
+
+        # Create SQS queue
+        queue_name = "pollens-queue"
+        sqs_queue = sqs.Queue(self, "SQSQueue", queue_name=queue_name)
+
         # Create EC2 machines for pollinator
         role = iam.Role(
             self, "PollinatorRole", assumed_by=iam.ServicePrincipal("ec2.amazonaws.com")
@@ -61,64 +66,32 @@ class InfrastructureStack(Stack):
         security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(22), "SSH")
         security_group.add_ingress_rule(ec2.Peer.any_ipv6(), ec2.Port.tcp(22), "SSH")
 
-        # pollinator_ec2 = ec2.Instance(self, "PollinatorEC2",
-        #     instance_type=ec2.InstanceType("g4dn.xlarge"),
-        #     machine_image=ecs.EcsOptimizedImage.amazon_linux2(hardware_type=ecs.AmiHardwareType.GPU),
-        #     key_name="pollinations-aws-key",
-        #     role=role,
-        #     vpc=vpc,
-        #     user_data=ec2.UserData.custom(user_data),
-        #     # add public IP
-        #     vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
-        #     # add security group
-        #     security_group=security_group,
-        # )
-
-        if instance_type == "GPU":
-            auto_scaling_group = autoscaling.AutoScalingGroup(
-                self,
-                "models-scaling-group",
-                vpc=vpc,
-                instance_type=ec2.InstanceType("g4dn.xlarge"),
-                machine_image=ecs.EcsOptimizedImage.amazon_linux2(
-                    hardware_type=ecs.AmiHardwareType.GPU
-                ),  # amzn2-ami-ecs-gpu-hvm-2.0.20220509-x86_64-ebs
-                min_capacity=1,
-                max_capacity=2,
-                key_name="pollinations-aws-key",
-                user_data=ec2.UserData.custom(user_data),
-                associate_public_ip_address=True,
-                vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
-                role=role,
-                security_group=security_group,
-            )
-            gpu_count = 1
-            memory_limit_mib = 14000
-        else:
-            auto_scaling_group = autoscaling.AutoScalingGroup(
-                self,
-                "models-scaling-group",
-                vpc=vpc,
-                instance_type=ec2.InstanceType("t2.medium"),
-                machine_image=ecs.EcsOptimizedImage.amazon_linux2(),  # amzn2-ami-ecs-gpu-hvm-2.0.20220509-x86_64-ebs
-                min_capacity=1,
-                max_capacity=2,
-                key_name="pollinations-aws-key",
-                user_data=ec2.UserData.custom(user_data),
-                associate_public_ip_address=True,
-                vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
-                role=role,
-                block_devices=[
-                    autoscaling.BlockDevice(
-                        device_name="/dev/xvda",
-                        volume=autoscaling.BlockDeviceVolume.ebs(
-                            150, iops=3000, volume_type="gp3"
-                        ),
-                    )
-                ],
-            )
-            gpu_count = 0
-            memory_limit_mib = 1024
+        
+        auto_scaling_group = autoscaling.AutoScalingGroup(
+            self,
+            "models-scaling-group",
+            vpc=vpc,
+            instance_type=ec2.InstanceType("g4dn.xlarge" if instance_type == "GPU" else "t2.medium"),
+            machine_image=ecs.EcsOptimizedImage.amazon_linux2(
+                hardware_type=ecs.AmiHardwareType.GPU
+            ),  # amzn2-ami-ecs-gpu-hvm-2.0.20220509-x86_64-ebs
+            min_capacity=1,
+            max_capacity=2,
+            key_name="pollinations-aws-key",
+            user_data=ec2.UserData.custom(user_data),
+            associate_public_ip_address=True,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
+            role=role,
+            security_group=security_group,
+            block_devices=[
+                autoscaling.BlockDevice(
+                    device_name="/dev/xvda",
+                    volume=autoscaling.BlockDeviceVolume.ebs(
+                        150, iops=3000, volume_type=autoscaling.EbsDeviceVolumeType.GP3
+                    ),
+                )
+            ],
+        )
 
         # capacity_provider = ecs.AsgCapacityProvider(self, "AsgCapacityProvider",
         #     auto_scaling_group=auto_scaling_group
@@ -130,10 +103,6 @@ class InfrastructureStack(Stack):
             "PollinatorLogGroup",
             retention=logs.RetentionDays.ONE_WEEK,
         )
-
-        # Create SQS queue
-        queue_name = "pollens-queue"
-        sqs_queue = sqs.Queue(self, "SQSQueue", queue_name=queue_name)
 
         # Create middleware ecs cluster
         image = ecs.ContainerImage.from_asset(
