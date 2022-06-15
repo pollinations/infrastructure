@@ -3,7 +3,9 @@
 # Deploy
 ## Manual
 ```
+pip install -e .
 export DOCKER_DEFAULT_PLATFORM='linux/amd64'
+# if needed: export STAGE=prod
 cdk synth
 cdk deploy
 ```
@@ -66,7 +68,7 @@ Do one of:
         Default region name [None]: us-east-1
         Default output format [None]:
 
-    export QUEUE_NAME=pollens-queue
+    export QUEUE_NAME=pollens-queue-dev
     localstack start &
     awslocal sqs create-queue --queue-name $QUEUE_NAME
     ```

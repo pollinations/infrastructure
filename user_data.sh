@@ -23,7 +23,7 @@ docker pull 614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator
         --network host \
         --name pollinator \
         --env AWS_REGION=us-east-1 \
-        --env QUEUE_NAME=pollens-queue  \
+        --env QUEUE_NAME=$QUEUE_NAME  \
         -v /var/run/docker.sock:/var/run/docker.sock \
         -v "$HOME/.aws/:/root/.aws/" \
         --mount type=bind,source=/tmp/ipfs,target=/tmp/ipfs \
