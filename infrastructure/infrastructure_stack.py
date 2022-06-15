@@ -18,10 +18,14 @@ from aws_cdk import aws_sns as sns
 from aws_cdk import aws_sns_subscriptions as sns_subscriptions
 from aws_cdk import aws_sqs as sqs
 from aws_cdk.aws_ecr_assets import DockerImageAsset
+from aws_cdk import aws_elasticloadbalancingv2 as elb
+from aws_cdk import aws_route53 as route53
 from constructs import Construct
 
+from infrastructure import settings
+
 with open("./user_data.sh") as f:
-    user_data = f.read()
+    user_data = f.read().replace("$QUEUE_NAME", settings.queue_name)
 
 instance_type = "GPU"
 
@@ -37,10 +41,8 @@ class InfrastructureStack(Stack):
             max_azs=3,
         )
 
-
         # Create SQS queue
-        queue_name = "pollens-queue"
-        sqs_queue = sqs.Queue(self, "SQSQueue", queue_name=queue_name)
+        sqs_queue = sqs.Queue(self, "SQSQueue", queue_name=settings.queue_name)
 
         # Create EC2 machines for pollinator
         role = iam.Role(
@@ -93,10 +95,6 @@ class InfrastructureStack(Stack):
             ],
         )
 
-        # capacity_provider = ecs.AsgCapacityProvider(self, "AsgCapacityProvider",
-        #     auto_scaling_group=auto_scaling_group
-        # )
-
         # Add log group to cloudwatch
         log_group = logs.LogGroup(
             self,
@@ -124,6 +122,10 @@ class InfrastructureStack(Stack):
             vpc=vpc,
             # security_group=ec2.SecurityGroup(self, "SecurityGroup", vpc=vpc),
             public_load_balancer=True,
+            # protocol=elb.ApplicationProtocol.HTTPS,
+            # domain_name=f"api.{settings.stage}.example.org",
+            # domain_zone=route53.HostedZone.from_lookup(self, f"{id}-hosted-zone", domain_name="example.org"),
+            # redirect_http=True,
             desired_count=1,
             task_image_options=ecs_patterns.ApplicationLoadBalancedTaskImageOptions(
                 image=image,
@@ -132,7 +134,7 @@ class InfrastructureStack(Stack):
                     "DEBUG": "True",
                     "LOG_LEVEL": "DEBUG",
                     "LOG_FORMAT": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                    "QUEUE_NAME": queue_name,
+                    "QUEUE_NAME": settings.queue_name,
                 },
                 secrets={
                     "secret_key": ecs.Secret.from_secrets_manager(
@@ -149,3 +151,4 @@ class InfrastructureStack(Stack):
             memory_limit_mib=1024,
             cpu=256,
         )
+        

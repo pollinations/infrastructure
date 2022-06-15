@@ -4,13 +4,14 @@ import os
 import aws_cdk as cdk
 
 from infrastructure.infrastructure_stack import InfrastructureStack
+from infrastructure.settings import stage
 
 app = cdk.App()
 
 
 InfrastructureStack(
     app,
-    "Elephant",
+    f"Elephant-{stage}",
     # If you don't specify 'env', this stack will be environment-agnostic.
     # Account/Region-dependent features and context lookups will not work,
     # but a single synthesized template can be deployed anywhere.
