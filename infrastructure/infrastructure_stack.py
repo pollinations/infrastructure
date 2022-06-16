@@ -18,8 +18,9 @@ from aws_cdk import aws_secretsmanager as sm
 from aws_cdk import aws_sns as sns
 from aws_cdk import aws_sns_subscriptions as sns_subscriptions
 from aws_cdk import aws_sqs as sqs
-from aws_cdk import certificatemanager
+from aws_cdk import aws_certificatemanager as certificatemanager
 from aws_cdk.aws_ecr_assets import DockerImageAsset
+from aws_cdk import aws_route53 as route53
 from constructs import Construct
 
 from infrastructure import settings
@@ -69,10 +70,6 @@ class InfrastructureStack(Stack):
         security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(22), "SSH")
         security_group.add_ingress_rule(ec2.Peer.any_ipv6(), ec2.Port.tcp(22), "SSH")
 
-        
-        certificate_arn = "arn:aws:acm:us-east-1:614871946825:certificate/27072bfb-9146-4fc1-b380-bb92521004a7"
-        certificate = certificatemanager.Certificate.from_certificate_arn(self, "pollinationsworker", certificate_arn)
-
         auto_scaling_group = autoscaling.AutoScalingGroup(
             self,
             "models-scaling-group",
@@ -98,9 +95,7 @@ class InfrastructureStack(Stack):
                         150, iops=3000, volume_type=autoscaling.EbsDeviceVolumeType.GP3
                     ),
                 )
-            ],
-            # certificate
-            certificate=certificate
+            ]
         )
 
         # Add log group to cloudwatch
@@ -123,6 +118,9 @@ class InfrastructureStack(Stack):
         )
         role.add_to_policy(iam.PolicyStatement(actions=["sqs:*"], resources=["*"]))
 
+        certificate_arn = "arn:aws:acm:us-east-1:614871946825:certificate/27072bfb-9146-4fc1-b380-bb92521004a7"
+        certificate = certificatemanager.Certificate.from_certificate_arn(self, "pollinationsworker", certificate_arn)
+
         # Create ECS pattern for the ECS Cluster
         cluster = ecs_patterns.ApplicationLoadBalancedFargateService(
             self,
@@ -131,7 +129,9 @@ class InfrastructureStack(Stack):
             # security_group=ec2.SecurityGroup(self, "SecurityGroup", vpc=vpc),
             public_load_balancer=True,
             protocol=elb.ApplicationProtocol.HTTPS,
-            domain_name="worker.pollinations.ai",
+            domain_name=f"worker-{settings.stage}.pollinations.ai",
+            certificate=certificate,
+            domain_zone=route53.HostedZone.from_lookup(self, "DomainZone", domain_name="pollinations.ai"),
             # domain_zone=route53.HostedZone.from_lookup(self, f"{id}-hosted-zone", domain_name="example.org"),
             # redirect_http=True,
             desired_count=1,
