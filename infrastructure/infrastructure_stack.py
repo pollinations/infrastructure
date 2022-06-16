@@ -18,6 +18,7 @@ from aws_cdk import aws_secretsmanager as sm
 from aws_cdk import aws_sns as sns
 from aws_cdk import aws_sns_subscriptions as sns_subscriptions
 from aws_cdk import aws_sqs as sqs
+from aws_cdk import certificatemanager
 from aws_cdk.aws_ecr_assets import DockerImageAsset
 from constructs import Construct
 
@@ -61,11 +62,16 @@ class InfrastructureStack(Stack):
             )
         )
 
+        
         security_group = ec2.SecurityGroup(
             self, "PollinatorSecurityGroup", vpc=vpc, allow_all_outbound=True
         )
         security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(22), "SSH")
         security_group.add_ingress_rule(ec2.Peer.any_ipv6(), ec2.Port.tcp(22), "SSH")
+
+        
+        certificate_arn = "arn:aws:acm:us-east-1:614871946825:certificate/27072bfb-9146-4fc1-b380-bb92521004a7"
+        certificate = certificatemanager.Certificate.from_certificate_arn(self, "pollinationsworker", certificate_arn)
 
         auto_scaling_group = autoscaling.AutoScalingGroup(
             self,
@@ -94,7 +100,7 @@ class InfrastructureStack(Stack):
                 )
             ],
             # certificate
-            certificate_arn="arn:aws:acm:us-east-1:614871946825:certificate/27072bfb-9146-4fc1-b380-bb92521004a7",
+            certificate=certificate
         )
 
         # Add log group to cloudwatch
