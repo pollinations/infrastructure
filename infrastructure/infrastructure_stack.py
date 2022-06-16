@@ -9,6 +9,7 @@ from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_ecr as ecr
 from aws_cdk import aws_ecs as ecs
 from aws_cdk import aws_ecs_patterns as ecs_patterns
+from aws_cdk import aws_elasticloadbalancingv2 as elb
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_logs as logs
 from aws_cdk import aws_s3 as s3  # Duration,; aws_sqs as sqs,
@@ -18,8 +19,6 @@ from aws_cdk import aws_sns as sns
 from aws_cdk import aws_sns_subscriptions as sns_subscriptions
 from aws_cdk import aws_sqs as sqs
 from aws_cdk.aws_ecr_assets import DockerImageAsset
-from aws_cdk import aws_elasticloadbalancingv2 as elb
-from aws_cdk import aws_route53 as route53
 from constructs import Construct
 
 from infrastructure import settings
@@ -68,12 +67,13 @@ class InfrastructureStack(Stack):
         security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(22), "SSH")
         security_group.add_ingress_rule(ec2.Peer.any_ipv6(), ec2.Port.tcp(22), "SSH")
 
-        
         auto_scaling_group = autoscaling.AutoScalingGroup(
             self,
             "models-scaling-group",
             vpc=vpc,
-            instance_type=ec2.InstanceType("g4dn.xlarge" if instance_type == "GPU" else "t2.medium"),
+            instance_type=ec2.InstanceType(
+                "g4dn.xlarge" if instance_type == "GPU" else "t2.medium"
+            ),
             machine_image=ecs.EcsOptimizedImage.amazon_linux2(
                 hardware_type=ecs.AmiHardwareType.GPU
             ),  # amzn2-ami-ecs-gpu-hvm-2.0.20220509-x86_64-ebs
@@ -93,6 +93,8 @@ class InfrastructureStack(Stack):
                     ),
                 )
             ],
+            # certificate
+            certificate_arn="arn:aws:acm:us-east-1:614871946825:certificate/27072bfb-9146-4fc1-b380-bb92521004a7",
         )
 
         # Add log group to cloudwatch
@@ -122,8 +124,8 @@ class InfrastructureStack(Stack):
             vpc=vpc,
             # security_group=ec2.SecurityGroup(self, "SecurityGroup", vpc=vpc),
             public_load_balancer=True,
-            # protocol=elb.ApplicationProtocol.HTTPS,
-            # domain_name=f"api.{settings.stage}.example.org",
+            protocol=elb.ApplicationProtocol.HTTPS,
+            domain_name="worker.pollinations.ai",
             # domain_zone=route53.HostedZone.from_lookup(self, f"{id}-hosted-zone", domain_name="example.org"),
             # redirect_http=True,
             desired_count=1,
@@ -151,4 +153,3 @@ class InfrastructureStack(Stack):
             memory_limit_mib=1024,
             cpu=256,
         )
-        
