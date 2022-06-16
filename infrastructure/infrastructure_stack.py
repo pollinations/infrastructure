@@ -118,8 +118,7 @@ class InfrastructureStack(Stack):
         )
         role.add_to_policy(iam.PolicyStatement(actions=["sqs:*"], resources=["*"]))
 
-        certificate_arn = "arn:aws:acm:us-east-1:614871946825:certificate/27072bfb-9146-4fc1-b380-bb92521004a7"
-        certificate = certificatemanager.Certificate.from_certificate_arn(self, "pollinationsworker", certificate_arn)
+        certificate = certificatemanager.Certificate.from_certificate_arn(self, "pollinationsworker", settings.certificate_arn)
 
         # Create ECS pattern for the ECS Cluster
         cluster = ecs_patterns.ApplicationLoadBalancedFargateService(
