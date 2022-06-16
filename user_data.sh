@@ -61,7 +61,7 @@ docker run --gpus all -d --rm \
         --network host \
         --name pollinator \
         --env AWS_REGION=us-east-1 \
-        --env QUEUE_NAME=pollens-queue  \
+        --env QUEUE_NAME=$QUEUE_NAME  \
         -v /var/run/docker.sock:/var/run/docker.sock \
         -v "$HOME/.aws/:/root/.aws/" \
         --mount type=bind,source=/tmp/ipfs,target=/tmp/ipfs \

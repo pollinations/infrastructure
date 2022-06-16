@@ -17,8 +17,8 @@ cdk deploy
 curl -H "Accept: application/json" \
     -H "Content-Type: application/json" \
     -X POST \
-    Eleph-beecl-1OHF1H6OP0ANU-1012574990.us-east-1.elb.amazonaws.com/pollen/ \
-    -d '{"notebook": "latent-diffusion", "ipfs": "QmRra7zGLpXYcnaPrgMtpqqpjtyXWQB63qxzjDXjU2fHrq"}'
+    Eleph-beecl-1X0LYRP1ZKOBL-1049606691.us-east-1.elb.amazonaws.com/pollen/ \
+    -d '{"pollen_id": "c3ca8c1b484544d78126e49bc2f0bdec", "notebook": "latent-diffusion", "ipfs": "QmNTsdMxTY4BdcqB9QpjHHDZaxN9uU9QoqWRwpnK55kVM7"}'
 ```
 
 Where the file structure in ipfs is:
