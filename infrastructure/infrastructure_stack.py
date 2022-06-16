@@ -39,7 +39,7 @@ class InfrastructureStack(Stack):
         vpc = ec2.Vpc(
             self,
             "VPC",
-            max_azs=3,
+            max_azs=2,
         )
 
         # Create SQS queue
