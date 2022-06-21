@@ -18,8 +18,8 @@ aws ecr get-login-password \
     --password-stdin 614871946825.dkr.ecr.us-east-1.amazonaws.com
 docker pull 614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:latest \
     | grep "Status: Downloaded newer image" \
-    && (docker kill pollinator || echo Pollinator not running...) \
-    && docker run --gpus all -d --rm \
+    && (docker kill pollinator && sleep 3 || echo Pollinator not running...)
+docker run --gpus all -d --rm \
         --network host \
         --name pollinator \
         --env AWS_REGION=us-east-1 \
@@ -38,8 +38,8 @@ aws ecr get-login-password \
 | docker login \
     --username AWS \
     --password-stdin 614871946825.dkr.ecr.us-east-1.amazonaws.com
-curl -o constants.py https://raw.githubusercontent.com/pollinations/pollinator/main/pollinator/constants.py
-curl -o fetch_images.py https://raw.githubusercontent.com/pollinations/pollinator/main/ec2_fetch_images.py
+curl -o images.json https://raw.githubusercontent.com/pollinations/model-index/main/images.json
+curl -o fetch_images.py https://raw.githubusercontent.com/pollinations/model-index/main/fetch_images.py
 python3 fetch_images.py | sh
 ' > /home/ec2-user/fetch_models.sh
 
