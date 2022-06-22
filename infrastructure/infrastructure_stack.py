@@ -9,6 +9,7 @@ from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_ecr as ecr
 from aws_cdk import aws_ecs as ecs
 from aws_cdk import aws_ecs_patterns as ecs_patterns
+from aws_cdk import aws_elasticloadbalancingv2 as elb
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_logs as logs
 from aws_cdk import aws_s3 as s3  # Duration,; aws_sqs as sqs,
@@ -17,8 +18,8 @@ from aws_cdk import aws_secretsmanager as sm
 from aws_cdk import aws_sns as sns
 from aws_cdk import aws_sns_subscriptions as sns_subscriptions
 from aws_cdk import aws_sqs as sqs
+from aws_cdk import aws_certificatemanager as certificatemanager
 from aws_cdk.aws_ecr_assets import DockerImageAsset
-from aws_cdk import aws_elasticloadbalancingv2 as elb
 from aws_cdk import aws_route53 as route53
 from constructs import Construct
 
@@ -38,7 +39,7 @@ class InfrastructureStack(Stack):
         vpc = ec2.Vpc(
             self,
             "VPC",
-            max_azs=3,
+            max_azs=2,
         )
 
         # Create SQS queue
@@ -62,18 +63,20 @@ class InfrastructureStack(Stack):
             )
         )
 
+        
         security_group = ec2.SecurityGroup(
             self, "PollinatorSecurityGroup", vpc=vpc, allow_all_outbound=True
         )
         security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(22), "SSH")
         security_group.add_ingress_rule(ec2.Peer.any_ipv6(), ec2.Port.tcp(22), "SSH")
 
-        
         auto_scaling_group = autoscaling.AutoScalingGroup(
             self,
             "models-scaling-group",
             vpc=vpc,
-            instance_type=ec2.InstanceType("g4dn.xlarge" if instance_type == "GPU" else "t2.medium"),
+            instance_type=ec2.InstanceType(
+                "g4dn.xlarge" if instance_type == "GPU" else "t2.medium"
+            ),
             machine_image=ecs.EcsOptimizedImage.amazon_linux2(
                 hardware_type=ecs.AmiHardwareType.GPU
             ),  # amzn2-ami-ecs-gpu-hvm-2.0.20220509-x86_64-ebs
@@ -92,7 +95,7 @@ class InfrastructureStack(Stack):
                         150, iops=3000, volume_type=autoscaling.EbsDeviceVolumeType.GP3
                     ),
                 )
-            ],
+            ]
         )
 
         # Add log group to cloudwatch
@@ -115,6 +118,8 @@ class InfrastructureStack(Stack):
         )
         role.add_to_policy(iam.PolicyStatement(actions=["sqs:*"], resources=["*"]))
 
+        certificate = certificatemanager.Certificate.from_certificate_arn(self, "pollinationsworker", settings.certificate_arn)
+
         # Create ECS pattern for the ECS Cluster
         cluster = ecs_patterns.ApplicationLoadBalancedFargateService(
             self,
@@ -122,10 +127,11 @@ class InfrastructureStack(Stack):
             vpc=vpc,
             # security_group=ec2.SecurityGroup(self, "SecurityGroup", vpc=vpc),
             public_load_balancer=True,
-            # protocol=elb.ApplicationProtocol.HTTPS,
-            # domain_name=f"api.{settings.stage}.example.org",
-            # domain_zone=route53.HostedZone.from_lookup(self, f"{id}-hosted-zone", domain_name="example.org"),
-            # redirect_http=True,
+            protocol=elb.ApplicationProtocol.HTTPS,
+            certificate=certificate,
+            redirect_http=True,
+            # # domain_name=f"worker-{settings.stage}.pollinations.ai",
+            # # domain_zone=route53.HostedZone.from_lookup(self, "DomainZone", domain_name="pollinations.ai"),
             desired_count=1,
             task_image_options=ecs_patterns.ApplicationLoadBalancedTaskImageOptions(
                 image=image,
@@ -151,4 +157,3 @@ class InfrastructureStack(Stack):
             memory_limit_mib=1024,
             cpu=256,
         )
-        

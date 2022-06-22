@@ -38,7 +38,8 @@ origins = [
     "http://localhost:*",
     "http://localhost:3000",
     "https://pollinations.ai",
-    "https://*.pollinations.ai"
+    "https://*.pollinations.ai",
+    "*"
 ]
 
 app.add_middleware(
