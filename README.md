@@ -17,7 +17,7 @@ cdk deploy
 curl -H "Accept: application/json" \
     -H "Content-Type: application/json" \
     -X POST \
-    Eleph-beecl-1X0LYRP1ZKOBL-1049606691.us-east-1.elb.amazonaws.com/pollen/ \
+    https://worker-prod.pollinations.ai/pollen/ \
     -d '{"pollen_id": "c3ca8c1b484544d78126e49bc2f0bdec", "notebook": "latent-diffusion", "ipfs": "QmNTsdMxTY4BdcqB9QpjHHDZaxN9uU9QoqWRwpnK55kVM7"}'
 ```
 
