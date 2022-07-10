@@ -8,6 +8,7 @@ echo "Installed aws logs" >> /tmp/setup.log
 
 
 mkdir /tmp/ipfs
+chmod -R a+rw /tmp/ipfs
 
 echo '
 #!/bin/bash
