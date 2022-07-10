@@ -81,7 +81,7 @@ class InfrastructureStack(Stack):
                 hardware_type=ecs.AmiHardwareType.GPU
             ),  # amzn2-ami-ecs-gpu-hvm-2.0.20220509-x86_64-ebs
             min_capacity=1,
-            max_capacity=2,
+            max_capacity=1,
             key_name="dev-key",
             user_data=ec2.UserData.custom(user_data),
             associate_public_ip_address=True,
