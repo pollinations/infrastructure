@@ -8,7 +8,7 @@ echo "Installed aws logs" >> /tmp/setup.log
 
 
 mkdir /tmp/ipfs
-chmod -R a+rw /tmp/ipfs
+chmod -R a+rw /tmp/
 
 echo '
 #!/bin/bash
@@ -46,8 +46,8 @@ python3 fetch_images.py | sh
 
 crontab -l > fetch_updates
 echo "*/5 * * * * sh /home/ec2-user/pull_updates_and_restart.sh &>> /tmp/pollinator.log" >> fetch_updates
-echo "*/5 * * * * docker system prune &>> /tmp/pollinator.log" >> fetch_updates
-echo "*/5 * * * * ps -ax | grep fetch_models | wc -l | grep 1 && sh /home/ec2-user/fetch_models.sh &>> /tmp/pollinator.log" >> fetch_updates
+echo "*/5 * * * * docker system prune &>> /tmp/prune.log" >> fetch_updates
+echo "*/5 * * * * ps -ax | grep fetch_models | wc -l | grep 2 && sh /home/ec2-user/fetch_models.sh &>> /tmp/fetch.log" >> fetch_updates
 crontab fetch_updates
 rm fetch_updates
 
