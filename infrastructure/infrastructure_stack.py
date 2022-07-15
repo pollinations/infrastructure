@@ -75,13 +75,13 @@ class InfrastructureStack(Stack):
             "models-scaling-group",
             vpc=vpc,
             instance_type=ec2.InstanceType(
-                "g4dn.xlarge" if instance_type == "GPU" else "t2.medium"
+                "p3.xlarge" if instance_type == "GPU" else "t2.medium" #  "g4dn.xlarge"
             ),
             machine_image=ecs.EcsOptimizedImage.amazon_linux2(
                 hardware_type=ecs.AmiHardwareType.GPU
             ),  # amzn2-ami-ecs-gpu-hvm-2.0.20220509-x86_64-ebs
-            min_capacity=1,
-            max_capacity=1,
+            min_capacity=4,
+            max_capacity=10,
             key_name="dev-key",
             user_data=ec2.UserData.custom(user_data),
             associate_public_ip_address=True,
@@ -92,7 +92,7 @@ class InfrastructureStack(Stack):
                 autoscaling.BlockDevice(
                     device_name="/dev/xvda",
                     volume=autoscaling.BlockDeviceVolume.ebs(
-                        150, iops=3000, volume_type=autoscaling.EbsDeviceVolumeType.GP3
+                        250, iops=3000, volume_type=autoscaling.EbsDeviceVolumeType.GP3
                     ),
                 )
             ]
