@@ -75,13 +75,13 @@ class InfrastructureStack(Stack):
             "models-scaling-group",
             vpc=vpc,
             instance_type=ec2.InstanceType(
-                "p3.xlarge" if instance_type == "GPU" else "t2.medium" #  "g4dn.xlarge"
+                "g4dn.xlarge" if settings.stage=="prod" else "g4dn.xlarge"
             ),
             machine_image=ecs.EcsOptimizedImage.amazon_linux2(
                 hardware_type=ecs.AmiHardwareType.GPU
             ),  # amzn2-ami-ecs-gpu-hvm-2.0.20220509-x86_64-ebs
-            min_capacity=4,
-            max_capacity=10,
+            min_capacity=4 if settings.stage=="prod" else 1,
+            max_capacity=10 if settings.stage=="prod" else 1,
             key_name="dev-key",
             user_data=ec2.UserData.custom(user_data),
             associate_public_ip_address=True,
@@ -105,7 +105,7 @@ class InfrastructureStack(Stack):
             retention=logs.RetentionDays.ONE_WEEK,
         )
 
-        # Create middleware ecs cluster
+        # Create supabase listener
         image = ecs.ContainerImage.from_asset(
             directory=os.path.join(".", "middlepoll"),
             build_args={"platform": "linux/amd64"},
@@ -118,42 +118,60 @@ class InfrastructureStack(Stack):
         )
         role.add_to_policy(iam.PolicyStatement(actions=["sqs:*"], resources=["*"]))
 
-        certificate = certificatemanager.Certificate.from_certificate_arn(self, "pollinationsworker", settings.certificate_arn)
-
         # Create ECS pattern for the ECS Cluster
-        cluster = ecs_patterns.ApplicationLoadBalancedFargateService(
-            self,
-            "bee-cluster",
-            vpc=vpc,
-            # security_group=ec2.SecurityGroup(self, "SecurityGroup", vpc=vpc),
-            public_load_balancer=True,
-            protocol=elb.ApplicationProtocol.HTTPS,
-            certificate=certificate,
-            redirect_http=True,
-            # # domain_name=f"worker-{settings.stage}.pollinations.ai",
-            # # domain_zone=route53.HostedZone.from_lookup(self, "DomainZone", domain_name="pollinations.ai"),
-            desired_count=1,
-            task_image_options=ecs_patterns.ApplicationLoadBalancedTaskImageOptions(
-                image=image,
-                container_port=5000,
-                environment={
-                    "DEBUG": "True",
-                    "LOG_LEVEL": "DEBUG",
-                    "LOG_FORMAT": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                    "QUEUE_NAME": settings.queue_name,
-                },
-                secrets={
-                    "secret_key": ecs.Secret.from_secrets_manager(
-                        sm.Secret.from_secret_attributes(
-                            self,
-                            "secret_key",
-                            secret_complete_arn="arn:aws:secretsmanager:us-east-1:614871946825:secret:token-secret-key-zK8E2a",
-                        )
-                    )
-                },
-                # add permission to get SQS queue url and send messages to SQS queue
-                task_role=role,
-            ),
+        fargate_task_definition = ecs.FargateTaskDefinition(self, "TaskDef",
             memory_limit_mib=1024,
             cpu=256,
+            task_role=role,
+            execution_role=role
         )
+        container = fargate_task_definition.add_container("SupabaseListener",
+            # Use an image from DockerHub
+            image=image,
+            logging=ecs.LogDriver.aws_logs(
+                stream_prefix="SupabaseListener",
+                log_retention=logs.RetentionDays.ONE_WEEK,
+            ),
+            environment={
+                "DEBUG": "True",
+                "LOG_LEVEL": "DEBUG",
+                "LOG_FORMAT": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                "QUEUE_NAME": settings.queue_name,
+            },
+            secrets={
+                "secret_key": ecs.Secret.from_secrets_manager(
+                    sm.Secret.from_secret_attributes(
+                        self,
+                        "secret_key",
+                        secret_complete_arn="arn:aws:secretsmanager:us-east-1:614871946825:secret:token-secret-key-zK8E2a",
+                    )
+                ),
+                "SUPABASE_ID": ecs.Secret.from_secrets_manager(
+                    sm.Secret.from_secret_attributes(
+                        self,
+                        "SUPABASE_ID",
+                        secret_complete_arn="arn:aws:secretsmanager:us-east-1:614871946825:secret:SUPABASE_ID-BTGhCC",
+                    )
+                ),
+                "SUPABASE_API_KEY": ecs.Secret.from_secrets_manager(
+                    sm.Secret.from_secret_attributes(
+                        self,
+                        "SUPABASE_API_KEY",
+                        secret_complete_arn="arn:aws:secretsmanager:us-east-1:614871946825:secret:SUPABASE_API_KEY-x86R9x",
+                    )
+                )
+            }
+        )
+
+        # Create cluster for the task
+        cluster = ecs.Cluster(self, "Cluster", vpc=vpc)
+        # Create the service
+        service = ecs.FargateService(
+            self,
+            "Service",
+            cluster=cluster,
+            task_definition=fargate_task_definition,
+            desired_count=1
+        )
+
+        

@@ -11,8 +11,8 @@ setup(
     install_requires=[
         "boto3",
         "click",
-        "fastapi",
-        "uvicorn",
+        "supabase",
+        "realtime",
         "python-jose[cryptography]",
         "python-dotenv",
         "retry",
