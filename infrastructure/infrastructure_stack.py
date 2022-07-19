@@ -26,7 +26,13 @@ from constructs import Construct
 from infrastructure import settings
 
 with open("./user_data.sh") as f:
-    user_data = f.read().replace("$QUEUE_NAME", settings.queue_name)
+    user_data = f.read()
+    user_data = user_data.replace("$QUEUE_NAME", settings.queue_name)
+    user_data = user_data.replace("$TAG", settings.pollinator_image_tag)
+    user_data = user_data.replace("$SUPABASE_URL", settings.SUPABASE_URL)
+    user_data = user_data.replace("$SUPABASE_API_KEY", settings.SUPABASE_API_KEY)
+    user_data = user_data.replace("$SUPABASE_ID", settings.SUPABASE_ID)
+    print(user_data)
 
 instance_type = "GPU"
 

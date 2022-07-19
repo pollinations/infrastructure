@@ -17,18 +17,17 @@ aws ecr get-login-password \
 | docker login \
     --username AWS \
     --password-stdin 614871946825.dkr.ecr.us-east-1.amazonaws.com
-docker pull 614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:latest \
+docker pull 614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:$TAG \
     | grep "Status: Downloaded newer image" \
     && (docker kill pollinator && sleep 3 || echo Pollinator not running...)
 docker run --gpus all -d --rm \
         --network host \
         --name pollinator \
-        --env AWS_REGION=us-east-1 \
-        --env QUEUE_NAME=$QUEUE_NAME  \
+        --env-file /home/ec2-user/.env \
         -v /var/run/docker.sock:/var/run/docker.sock \
         -v "$HOME/.aws/:/root/.aws/" \
         --mount type=bind,source=/tmp/ipfs,target=/tmp/ipfs \
-        614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:latest
+        614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:$TAG
 ' > /home/ec2-user/pull_updates_and_restart.sh
 
 
@@ -44,6 +43,11 @@ curl -o fetch_images.py https://raw.githubusercontent.com/pollinations/model-ind
 python3 fetch_images.py | sh
 ' > /home/ec2-user/fetch_models.sh
 
+echo 'SUPABASE_API_KEY="$SUPABASE_API_KEY"' >> /home/ec2-user/.env
+echo 'SUPABASE_URL="$SUPABASE_URL"' >> /home/ec2-user/.env
+echo 'SUPABASE_ID="$SUPABASE_ID"' >> /home/ec2-user/.env
+echo 'QUEUE_NAME="$QUEUE_NAME"' >> /home/ec2-user/.env
+
 crontab -l > fetch_updates
 echo "*/5 * * * * sh /home/ec2-user/pull_updates_and_restart.sh &>> /tmp/pollinator.log" >> fetch_updates
 echo "*/5 * * * * docker system prune -f &>> /tmp/prune.log" >> fetch_updates
@@ -57,14 +61,13 @@ aws ecr get-login-password \
 | docker login \
     --username AWS \
     --password-stdin 614871946825.dkr.ecr.us-east-1.amazonaws.com
-docker pull 614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:latest
+docker pull 614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:$TAG
 
 docker run --gpus all -d --rm \
         --network host \
         --name pollinator \
-        --env AWS_REGION=us-east-1 \
-        --env QUEUE_NAME=$QUEUE_NAME  \
+        --env-file /home/ec2-user/.env  \
         -v /var/run/docker.sock:/var/run/docker.sock \
         -v "$HOME/.aws/:/root/.aws/" \
         --mount type=bind,source=/tmp/ipfs,target=/tmp/ipfs \
-        614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:latest &>> /tmp/pollinator.log
+        614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pollinator:$TAG &>> /tmp/pollinator.loguser
