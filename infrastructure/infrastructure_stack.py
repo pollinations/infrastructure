@@ -48,14 +48,10 @@ class InfrastructureStack(Stack):
             max_azs=2,
         )
 
-        # Create SQS queue
-        sqs_queue = sqs.Queue(self, "SQSQueue", queue_name=settings.queue_name)
-
         # Create EC2 machines for pollinator
         role = iam.Role(
             self, "PollinatorRole", assumed_by=iam.ServicePrincipal("ec2.amazonaws.com")
         )
-        role.add_to_policy(iam.PolicyStatement(resources=["*"], actions=["sqs:*"]))
         role.add_to_policy(iam.PolicyStatement(resources=["*"], actions=["ecr:*"]))
         role.add_to_policy(
             iam.PolicyStatement(
@@ -84,7 +80,7 @@ class InfrastructureStack(Stack):
                 "g4dn.xlarge" if settings.stage=="prod" else "g4dn.xlarge"
             ),
             machine_image=ecs.EcsOptimizedImage.amazon_linux2(
-                hardware_type=ecs.AmiHardwareType.GPU
+                hardware_type=ecs.AmiHardwareType.GPU,
             ),  # amzn2-ami-ecs-gpu-hvm-2.0.20220509-x86_64-ebs
             min_capacity=4 if settings.stage=="prod" else 1,
             max_capacity=10 if settings.stage=="prod" else 1,

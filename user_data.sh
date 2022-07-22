@@ -43,10 +43,11 @@ curl -o fetch_images.py https://raw.githubusercontent.com/pollinations/model-ind
 python3 fetch_images.py | sh
 ' > /home/ec2-user/fetch_models.sh
 
-echo 'SUPABASE_API_KEY="$SUPABASE_API_KEY"' >> /home/ec2-user/.env
-echo 'SUPABASE_URL="$SUPABASE_URL"' >> /home/ec2-user/.env
-echo 'SUPABASE_ID="$SUPABASE_ID"' >> /home/ec2-user/.env
-echo 'QUEUE_NAME="$QUEUE_NAME"' >> /home/ec2-user/.env
+echo 'SUPABASE_API_KEY=$SUPABASE_API_KEY' >> /home/ec2-user/.env
+echo 'SUPABASE_URL=$SUPABASE_URL' >> /home/ec2-user/.env
+echo 'SUPABASE_ID=$SUPABASE_ID' >> /home/ec2-user/.env
+echo 'QUEUE_NAME=$QUEUE_NAME' >> /home/ec2-user/.env
+echo 'AWS_REGION=us-east-1' >> /home/ec2-user/.env
 
 crontab -l > fetch_updates
 echo "*/5 * * * * sh /home/ec2-user/pull_updates_and_restart.sh &>> /tmp/pollinator.log" >> fetch_updates
